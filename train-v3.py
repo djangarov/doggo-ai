@@ -1,3 +1,4 @@
+import argparse
 import cv2
 import numpy as np
 import os
@@ -6,35 +7,59 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 
 EPOCHS = 20
 IMG_WIDTH = 150
 IMG_HEIGHT = 150
-NUM_CATEGORIES = 157
 TEST_SIZE = 0.4
 BATCH_SIZE = 32
 
 
 def main():
-    data_dir = "./datasets-dogs"
+    parser = argparse.ArgumentParser(description='Train a CNN model on images.')
+    parser.add_argument('model_name', help='Model name to save as')
+    parser.add_argument('dataset_dir', help='Path to dataset directory for class names')
 
-    find_problematic_files(data_dir)
+    args = parser.parse_args()
+
+    # Check if files exist
+    if not args.model_name:
+        print(f"Error: Model name is required!")
+        sys.exit(1)
+
+    if not os.path.exists(args.dataset_dir):
+        print(f"Warning: Dataset directory '{args.dataset_dir}' not found! Class names will not be displayed.")
+
+    find_problematic_files(args.dataset_dir)
     # Load image data from directory
-    x_train, y_test = load_data(data_dir)
+    x_train, y_test = load_data(args.dataset_dir)
+
+    # Get actual number of categories from the dataset
+    global NUM_CATEGORIES
+    NUM_CATEGORIES = len(x_train.class_names)
+    print(f"Found {NUM_CATEGORIES} categories in dataset")
+
+    # Optimize dataset for performance
+    # x_train = x_train.shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)
+    # y_test = y_test.prefetch(buffer_size=tf.data.AUTOTUNE)
+    x_train = x_train.cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)
+    y_test = y_test.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
 
     # Get a compiled neural network
     model = get_model()
     model.summary()
-    # # Fit model on training data
-    model.fit(x_train, validation_data=y_test, epochs=EPOCHS)
+    # Fit model on training data
+    history = model.fit(x_train, validation_data=y_test, epochs=EPOCHS)
 
     # Evaluate neural network performance
     model.evaluate(y_test, verbose=2)
+    visualize_training(history)
 
     # # Save model to file
-    filename = "dogs_model.keras"
+    filename = args.model_name + ".keras"
     model.save(filename)
     print(f"Model saved to {filename}.")
 
@@ -109,10 +134,6 @@ def load_data(data_dir: str) -> tuple:
             image_size=(IMG_HEIGHT, IMG_WIDTH),
             batch_size=BATCH_SIZE)
 
-        # Optimize dataset for performance
-        x_train = x_train.shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)
-        y_test = y_test.prefetch(buffer_size=tf.data.AUTOTUNE)
-
         return x_train, y_test
     except tf.errors.InvalidArgumentError as e:
         print(f"Image format error: {e}")
@@ -151,14 +172,22 @@ def get_model() -> Model:
     x = layers.Convolution2D(128, 3, activation='relu')(x)
     x = layers.MaxPooling2D(2)(x)
 
+    # Fourth convolution extracts 64 filters that are 3x3
+    # Convolution is followed by max-pooling layer with a 2x2 window
+    x = layers.Convolution2D(256, 3, activation='relu')(x)
+    x = layers.MaxPooling2D(2)(x)
+
     # Flatten feature map to a 1-dim tensor
-    x = layers.Flatten()(x)
+    x = layers.GlobalAveragePooling2D()(x)
 
     # Create a fully connected layer with ReLU activation and 512 hidden units
     x = layers.Dense(512, activation='relu')(x)
 
     # Add a dropout rate of 0.5
     x = layers.Dropout(0.5)(x)
+
+    x = layers.Dense(256, activation='relu')(x)
+    x = layers.Dropout(0.3)(x)
 
     # Create output layer with a single node and softmax activation
     output = layers.Dense(NUM_CATEGORIES, activation='softmax')(x)
@@ -174,6 +203,31 @@ def get_model() -> Model:
 
     return model
 
+def visualize_training(history):
+    """
+    Visualize training history
+    """
+    acc = history.history['accuracy']
+    val_acc = history.history['val_accuracy']
+
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+
+    epochs_range = range(EPOCHS)
+
+    plt.figure(figsize=(8, 8))
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs_range, acc, label='Training Accuracy')
+    plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+    plt.legend(loc='lower right')
+    plt.title('Training and Validation Accuracy')
+
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs_range, loss, label='Training Loss')
+    plt.plot(epochs_range, val_loss, label='Validation Loss')
+    plt.legend(loc='upper right')
+    plt.title('Training and Validation Loss')
+    plt.show()
 
 if __name__ == "__main__":
     main()

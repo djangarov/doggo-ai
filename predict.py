@@ -11,7 +11,7 @@ IMG_WIDTH = 150
 IMG_HEIGHT = 150
 NUM_CATEGORIES = 157
 
-def get_class_names(data_dir):
+def get_class_names(data_dir) -> list | None:
     """
     Get class names from dataset directory structure
     """
@@ -24,28 +24,18 @@ def get_class_names(data_dir):
             class_names.append(class_dir)
     return class_names
 
-def preprocess_image(image_path):
+def preprocess_image(image_path) -> tf.Tensor:
     """
-    Preprocess a single image for prediction
+    Preprocess a single image for prediction - MUST match training preprocessing
     """
-    # Read the image
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError(f"Could not load image from {image_path}")
+    # Read the image file
+    img = tf.keras.utils.load_img(
+        image_path, target_size=(IMG_HEIGHT, IMG_WIDTH)
+    )
+    img_array = tf.keras.utils.img_to_array(img)
+    img_array = tf.expand_dims(img_array, 0) # Create a batch
 
-    # Convert BGR to RGB (OpenCV uses BGR by default)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-    # Resize to match training dimensions
-    image = cv2.resize(image, (IMG_WIDTH, IMG_HEIGHT))
-
-    # Normalize pixel values to [0, 1] range
-    image = image.astype(np.float32) / 255.0
-
-    # Add batch dimension
-    image = np.expand_dims(image, axis=0)
-
-    return image
+    return img_array
 
 def predict_image(model_path, image_path, dataset_dir=None):
     """
@@ -56,6 +46,15 @@ def predict_image(model_path, image_path, dataset_dir=None):
         print(f"Loading model from {model_path}...")
         model = load_model(model_path)
         print("Model loaded successfully!")
+
+        # Print model summary to check if it's properly trained
+        print("\nModel Summary:")
+        model.summary()
+
+        # Check model weights (should not be all zeros)
+        first_layer_weights = model.layers[0].get_weights()
+        if len(first_layer_weights) > 0:
+            print(f"First layer weight range: {first_layer_weights[0].min():.6f} to {first_layer_weights[0].max():.6f}")
 
         # Get class names if dataset directory is provided
         class_names = None
