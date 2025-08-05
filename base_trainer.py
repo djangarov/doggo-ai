@@ -172,7 +172,7 @@ class BaseTrainer(ABC):
             )
         ]
 
-    def train(self, dataset_dir: str, custome_model_name: str | None) -> tuple[Model, History]:
+    def train(self, dataset_dir: str, custom_model_name: str | None) -> tuple[Model, History]:
         """
         Main training method
         """
@@ -191,7 +191,7 @@ class BaseTrainer(ABC):
         model = self.get_model(num_categories)
         model.summary()
 
-        model_name = custome_model_name if custome_model_name else self.model_name
+        model_name = custom_model_name if custom_model_name else self.model_name
 
         # Fit model on training data
         callbacks = self.get_callbacks(model_name)
