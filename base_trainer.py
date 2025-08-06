@@ -110,7 +110,7 @@ class BaseTrainer(ABC):
 
         return problematic_files
 
-    def visualize_training(self, model_name: str, history: History, epochs: int) -> None:
+    def visualize_training(self, model_name: str, history: History) -> None:
         """
         Visualize training history
         """
@@ -120,9 +120,10 @@ class BaseTrainer(ABC):
         loss = history.history['loss']
         val_loss = history.history['val_loss']
 
-        epochs_range = range(epochs)
+        actual_epochs = len(acc)
+        epochs_range = range(actual_epochs)
 
-        plt.figure(figsize=(8, 8))
+        plt.figure(figsize=(12, 8))
         plt.subplot(1, 2, 1)
         plt.plot(epochs_range, acc, label='Training Accuracy')
         plt.plot(epochs_range, val_acc, label='Validation Accuracy')

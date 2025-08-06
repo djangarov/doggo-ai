@@ -32,12 +32,32 @@ class VGG19Trainer(BaseTrainer):
 
         base_model.trainable = False  # Freeze base model
 
-        model = tf.keras.Sequential([
-            base_model,
-            tf.keras.layers.GlobalAveragePooling2D(),
-            tf.keras.layers.Dropout(0.2),
-            tf.keras.layers.Dense(num_categories, activation='softmax')
-        ])
+        # Add preprocessing and data augmentation
+        inputs = tf.keras.Input(shape=(self.img_width, self.img_height, 3))
+
+        # Data augmentation
+        x = tf.keras.layers.RandomFlip("horizontal")(inputs)
+        x = tf.keras.layers.RandomRotation(0.15)(x)
+        x = tf.keras.layers.RandomZoom(0.15)(x)
+        x = tf.keras.layers.RandomBrightness(0.1)(x)
+
+        # VGG19 preprocessing
+        x = tf.keras.applications.vgg19.preprocess_input(x)
+
+        # Base model
+        x = base_model(x, training=False)
+
+        # Classification head
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        x = tf.keras.layers.Dropout(0.4)(x)
+        x = tf.keras.layers.Dense(1024, activation='relu')(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+        x = tf.keras.layers.Dense(512, activation='relu')(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+
+        outputs = tf.keras.layers.Dense(num_categories, activation='softmax')(x)
+
+        model = tf.keras.Model(inputs, outputs)
 
         model.compile(
             optimizer=Adam(learning_rate=0.0001),
