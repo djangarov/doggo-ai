@@ -205,7 +205,7 @@ class BaseTrainer(ABC):
 
         # Evaluate neural network performance
         model.evaluate(y_test, verbose=2)
-        self.visualize_training(model_name, history, self.epochs)
+        self.visualize_training(model_name, history)
         # Save model to file
         self.save_model(model, model_name)
 
