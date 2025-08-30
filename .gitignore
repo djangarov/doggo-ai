@@ -15,3 +15,5 @@ models/*
 *.zip
 *.h5
 *.keras
+
+.DS_Store

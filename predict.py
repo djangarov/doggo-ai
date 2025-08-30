@@ -22,7 +22,7 @@ def get_class_names(data_dir: str) -> list | None:
 
 def preprocess_image(image_path: str, img_size: tuple) -> tf.Tensor:
     """
-    Preprocess a single image for prediction - MUST match training preprocessing
+    Preprocess a single image for prediction
     """
     # Read the image file
     img = tf.keras.utils.load_img(
