@@ -9,10 +9,10 @@ wheels/
 # Virtual environments
 .venv
 
-datasets/*
-test-images/*
-models/*
-tf-models/*
+datasets/
+test-images/
+models/
+tf-models/
 *.zip
 *.h5
 *.keras
