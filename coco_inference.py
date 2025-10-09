@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from time import time
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -76,7 +77,171 @@ def validate_image(image: np.ndarray) -> bool:
 
     return True
 
-def draw_detections(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores: np.ndarray) -> None:
+def crop_detections(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores: np.ndarray,
+                   output_dir: str = "cropped_objects", target_class: int = None) -> list:
+    """
+    Crop detected objects from the original image and save them as separate files.
+
+    Args:
+        image: Original image as numpy array
+        boxes: Detection bounding boxes (normalized coordinates)
+        classes: Detection class IDs
+        scores: Detection confidence scores
+        output_dir: Directory to save cropped images
+        target_class: If specified, only crop objects of this class (e.g., 18 for dogs)
+
+    Returns:
+        List of saved file paths
+    """
+    validate_image(image)
+
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    h, w, _ = image.shape
+    saved_files = []
+    detection_count = 0
+
+    print(f"Cropping detections from image with shape: {image.shape}")
+
+    for i, (box, score, class_id) in enumerate(zip(boxes, scores, classes)):
+        # Filter by confidence and optionally by class
+        if score >= MIN_SCORE_THRESH:
+            if target_class is not None and int(class_id) != target_class:
+                continue
+
+            ymin, xmin, ymax, xmax = box
+
+            # Convert normalized coordinates to pixel coordinates
+            left = int(xmin * w)
+            top = int(ymin * h)
+            right = int(xmax * w)
+            bottom = int(ymax * h)
+
+            # Ensure coordinates are within image bounds
+            left = max(0, left)
+            top = max(0, top)
+            right = min(w, right)
+            bottom = min(h, bottom)
+
+            # Skip if bounding box is too small
+            if (right - left) < 10 or (bottom - top) < 10:
+                print(f"Skipping detection {i}: bounding box too small")
+                continue
+
+            # Crop the image
+            cropped_image = image[top:bottom, left:right]
+
+            # Get class name for filename
+            class_name = COCO_CLASSES.get(int(class_id), f'class_{int(class_id)}')
+
+            # Create filename
+            filename = f"{class_name}_{detection_count:03d}_score_{score:.2f}.jpg"
+            filepath = os.path.join(output_dir, filename)
+
+            # Convert to PIL Image and save
+            pil_image = Image.fromarray(cropped_image.astype(np.uint8))
+            pil_image.save(filepath, 'JPEG', quality=95)
+
+            saved_files.append(filepath)
+            print(f"Saved detection {detection_count + 1}: {filename} ({cropped_image.shape[1]}x{cropped_image.shape[0]})")
+            print(f"  Original box: ({left}, {top}) -> ({right}, {bottom})")
+
+            detection_count += 1
+
+    print(f"Cropped and saved {len(saved_files)} objects to '{output_dir}'")
+    return saved_files
+
+def crop_detections_with_masks(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray,
+                              scores: np.ndarray, masks: np.ndarray, output_dir: str = "cropped_objects_masked",
+                              target_class: int = None) -> list:
+    """
+    Crop detected objects using masks for precise extraction.
+
+    Args:
+        image: Original image as numpy array
+        boxes: Detection bounding boxes (normalized coordinates)
+        classes: Detection class IDs
+        scores: Detection confidence scores
+        masks: Detection masks
+        output_dir: Directory to save cropped images
+        target_class: If specified, only crop objects of this class
+
+    Returns:
+        List of saved file paths
+    """
+    validate_image(image)
+
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    h, w, _ = image.shape
+    saved_files = []
+    detection_count = 0
+
+    print(f"Cropping detections with masks from image with shape: {image.shape}")
+
+    for i, (box, score, class_id, mask) in enumerate(zip(boxes, scores, classes, masks)):
+        # Filter by confidence and optionally by class
+        if score >= MIN_SCORE_THRESH:
+            if target_class is not None and int(class_id) != target_class:
+                continue
+
+            ymin, xmin, ymax, xmax = box
+
+            # Convert normalized coordinates to pixel coordinates
+            left = int(xmin * w)
+            top = int(ymin * h)
+            right = int(xmax * w)
+            bottom = int(ymax * h)
+
+            # Ensure coordinates are within image bounds
+            left = max(0, left)
+            top = max(0, top)
+            right = min(w, right)
+            bottom = min(h, bottom)
+
+            # Skip if bounding box is too small
+            if (right - left) < 10 or (bottom - top) < 10:
+                continue
+
+            # Ensure mask is 2D
+            if len(mask.shape) == 3:
+                mask = mask[:, :, 0]
+
+            # Convert mask to float32 for TensorFlow resize
+            mask_float = tf.cast(mask, tf.float32)
+
+            # Resize mask to match bounding box
+            mask_resized = tf.image.resize(mask_float[..., None], [bottom-top, right-left])
+            mask_binary = mask_resized[:, :, 0].numpy() > 0.5
+
+            # Crop the image
+            cropped_image = image[top:bottom, left:right].copy()
+
+            # Apply mask (set background to white or transparent)
+            cropped_image_masked = cropped_image.copy()
+            cropped_image_masked[~mask_binary] = [255, 255, 255]  # White background
+
+            # Get class name for filename
+            class_name = COCO_CLASSES.get(int(class_id), f'class_{int(class_id)}')
+
+            # Masked crop
+            filename_masked = f"{class_name}_{detection_count:03d}_masked_score_{score:.2f}.jpg"
+            filepath_masked = os.path.join(output_dir, filename_masked)
+            pil_image_masked = Image.fromarray(cropped_image_masked.astype(np.uint8))
+            pil_image_masked.save(filepath_masked, 'JPEG', quality=95)
+
+            saved_files.append(filepath_masked)
+            print(f"Saved detection {detection_count + 1}: {filename_masked}")
+            print(f"  Size: {cropped_image.shape[1]}x{cropped_image.shape[0]}")
+
+            detection_count += 1
+
+    print(f"Cropped and saved {len(saved_files)} images to '{output_dir}'")
+    return saved_files
+
+def draw_detections(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores: np.ndarray, target_class: int = None) -> None:
     """Draw bounding boxes and labels on the image."""
     print(f"Drawing detections for image with shape: {image.shape}")
     print(f"Image data range: {image.min()} to {image.max()}")
@@ -93,7 +258,10 @@ def draw_detections(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, s
     print(f"Processing {len(boxes)} potential detections...")
 
     for _, (box, score, class_id) in enumerate(zip(boxes, scores, classes)):
-        if score >= MIN_SCORE_THRESH and int(class_id) == 18:  # Focus on 'dog' class
+        if score >= MIN_SCORE_THRESH:
+            if target_class is not None and int(class_id) != target_class:
+                continue
+
             ymin, xmin, ymax, xmax = box
 
             # Convert normalized coordinates to pixel coordinates
@@ -124,7 +292,7 @@ def draw_detections(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, s
     plt.tight_layout()
     plt.show()
 
-def draw_masks(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores: np.ndarray, masks: np.ndarray) -> None:
+def draw_masks(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores: np.ndarray, masks: np.ndarray, target_class: int = None) -> None:
     """Draw masks if available."""
     print(f"Drawing masks for image with shape: {image.shape}")
     print(f"Image data range: {image.min()} to {image.max()}")
@@ -148,7 +316,10 @@ def draw_masks(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores
     print(f"Processing {len(masks)} masks...")
 
     for _, (box, score, class_id, mask) in enumerate(zip(boxes, scores, classes, masks)):
-        if score >= MIN_SCORE_THRESH and int(class_id) == 18:  # Focus on 'dog' class
+        if score >= MIN_SCORE_THRESH:
+            if target_class is not None and int(class_id) != target_class:
+                continue
+
             print(f"Processing detection {detection_count + 1} with score {score:.3f}")
 
             # Get class name
@@ -200,6 +371,9 @@ def draw_masks(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Predict image class using trained model')
     parser.add_argument('image_path', help='Path to the image to predict')
+    parser.add_argument('--crop', action='store_true', help='Crop detected objects and save them')
+    parser.add_argument('--crop-class', type=int, help='Only crop objects of specific class (e.g., 18 for dogs)')
+    parser.add_argument('--output-dir', default='cropped_objects', help='Directory to save cropped images')
 
     args = parser.parse_args()
 
@@ -230,9 +404,20 @@ if __name__ == "__main__":
     valid_detections = np.sum(scores >= MIN_SCORE_THRESH)
     print(f"Found {valid_detections} objects with confidence >= {MIN_SCORE_THRESH}")
 
+    folder_ts = str(time())
+    output_dir = os.path.join(args.output_dir, folder_ts)
+    output_masked_dir = os.path.join(args.output_dir, folder_ts, "masked")
+
     if valid_detections > 0:
     # Draw detections with bounding boxes
         draw_detections(image_np[0], boxes, classes, scores)
+
+        # Crop detected objects if requested
+        if args.crop:
+            print("Cropping detected objects...")
+            saved_files = crop_detections(image_np[0], boxes, classes, scores,
+                                        output_dir, args.crop_class)
+            print(f"Saved {len(saved_files)} cropped images")
 
         # Handle models with masks
         if 'detection_masks' in result:
@@ -266,6 +451,15 @@ if __name__ == "__main__":
 
                 print(type(image_np[0]), type(valid_boxes), type(valid_classes), type(valid_scores), type(valid_masks))
                 draw_masks(image_np[0], valid_boxes, valid_classes, valid_scores, valid_masks)
+
+                # Crop with masks if requested
+                if args.crop:
+                    print("Cropping with masks...")
+                    saved_mask_files = crop_detections_with_masks(
+                        image_np[0], valid_boxes, valid_classes, valid_scores, valid_masks,
+                        output_masked_dir, args.crop_class
+                    )
+                    print(f"Saved {len(saved_mask_files)} masked cropped images")
 
     print("Object detection completed!")
 
