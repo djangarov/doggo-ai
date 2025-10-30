@@ -22,6 +22,7 @@ def get_class_names(data_dir: str) -> list | None:
     for class_dir in sorted(os.listdir(data_dir)):
         if os.path.isdir(os.path.join(data_dir, class_dir)):
             class_names.append(class_dir)
+
     return class_names
 
 def preprocess_image(image_path: str, img_size: tuple, model: Model) -> tf.Tensor:
@@ -105,6 +106,7 @@ def get_object_coordinates_from_gradcam(model: Model, processed_image: tf.Tensor
 
         if grads is None or conv_outputs is None:
             print("Could not compute gradients")
+
             return []
 
         # Compute the weighted feature maps
@@ -149,6 +151,7 @@ def get_object_coordinates_from_gradcam(model: Model, processed_image: tf.Tensor
 
     except Exception as e:
         print(f"Error getting object coordinates: {e}")
+
         return []
 
 def create_enhanced_heatmap_overlay(model: Model, processed_image: tf.Tensor, original_image: ImageFile):
@@ -165,6 +168,7 @@ def create_enhanced_heatmap_overlay(model: Model, processed_image: tf.Tensor, or
 
         if grad_cam_layer is None:
             print("grad_cam_conv layer not found, falling back to default method")
+
             return None
 
         # Fix: Use model.input instead of [model.inputs]
@@ -202,6 +206,7 @@ def create_enhanced_heatmap_overlay(model: Model, processed_image: tf.Tensor, or
 
     except Exception as e:
         print(f"Error creating enhanced heatmap: {e}")
+
         return None
 
 def display_prediction_with_detection(image_path: str, predicted_class: int, confidence: float, class_names: list = None, model=None, processed_image=None):
@@ -355,6 +360,7 @@ def predict_image(model_path: str, image_path: str, dataset_dir: str | None = No
 
     except Exception as e:
         print(f"Error during prediction: {str(e)}")
+
         return None, None
 
 def main():

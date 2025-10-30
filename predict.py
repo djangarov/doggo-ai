@@ -17,6 +17,7 @@ def get_class_names(data_dir: str) -> list | None:
     for class_dir in sorted(os.listdir(data_dir)):
         if os.path.isdir(os.path.join(data_dir, class_dir)):
             class_names.append(class_dir)
+
     return class_names
 
 def preprocess_image(image_path: str, img_size: tuple) -> tf.Tensor:
@@ -92,6 +93,7 @@ def predict_image(model_path: str, image_path: str, dataset_dir: str | None = No
 
     except Exception as e:
         print(f"Error during prediction: {str(e)}")
+
         return None, None
 
 def main():

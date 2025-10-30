@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 import numpy as np
-from six import BytesIO
 from PIL import Image
 
 import tensorflow as tf
@@ -51,15 +50,15 @@ def load_image_into_numpy_array(path: str) -> np.ndarray:
     Returns:
         uint8 numpy array with shape (img_height, img_width, 3)
     """
-    image_data = tf.io.gfile.GFile(path, 'rb').read()
-    image = Image.open(BytesIO(image_data))
+    image = tf.keras.utils.load_img(path, color_mode='rgb')
 
-    (im_width, im_height) = image.size
-    print(f"Image loaded successfully: {im_width}x{im_height}")
+    print(f"Image loaded successfully: {image.size[0]}x{image.size[1]}")
 
-    # Convert to numpy array with correct shape
-    image_array = np.array(image.getdata()).reshape(
-        (1, im_height, im_width, 3)).astype(np.uint8)
+    # Convert PIL image to numpy array
+    image_array = tf.keras.utils.img_to_array(image, dtype=np.uint8)
+
+    # Add batch dimension (expand dims to make it (1, height, width, 3))
+    image_array = np.expand_dims(image_array, axis=0)
 
     # Debug: Check if image has actual data
     print(f"Image array shape: {image_array.shape}")
@@ -299,7 +298,7 @@ def draw_masks(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, scores
 
     if masks is None:
         print("No masks provided, falling back to bounding boxes")
-        return draw_detections(image, boxes, classes, scores)
+        return draw_detections(image, boxes, classes, scores, target_class)
 
     validate_image(image)
 
@@ -410,7 +409,7 @@ if __name__ == "__main__":
 
     if valid_detections > 0:
     # Draw detections with bounding boxes
-        draw_detections(image_np[0], boxes, classes, scores)
+        draw_detections(image_np[0], boxes, classes, scores, args.crop_class)
 
         # Crop detected objects if requested
         if args.crop:
@@ -450,7 +449,7 @@ if __name__ == "__main__":
                 valid_scores = scores[scores >= MIN_SCORE_THRESH]
 
                 print(type(image_np[0]), type(valid_boxes), type(valid_classes), type(valid_scores), type(valid_masks))
-                draw_masks(image_np[0], valid_boxes, valid_classes, valid_scores, valid_masks)
+                draw_masks(image_np[0], valid_boxes, valid_classes, valid_scores, valid_masks, args.crop_class)
 
                 # Crop with masks if requested
                 if args.crop:
