@@ -37,32 +37,17 @@ COCO_CLASSES = {
     89: 'hair drier', 90: 'toothbrush'
 }
 
-def load_image_into_numpy_array(path: str) -> np.ndarray:
-    """Load an image from file into a numpy array.
-
-    Puts image into numpy array to feed into tensorflow graph.
-    Note that by convention we put it into a numpy array with shape
-    (height, width, channels), where channels=3 for RGB.
-
-    Args:
-        path: the file path to the image
-
-    Returns:
-        uint8 numpy array with shape (img_height, img_width, 3)
+def preprocess_image(path: str) -> tf.Tensor:
     """
+    Preprocess a single image for prediction
+    """
+    # Read the image file
     image = tf.keras.utils.load_img(path, color_mode='rgb')
 
     print(f"Image loaded successfully: {image.size[0]}x{image.size[1]}")
 
-    # Convert PIL image to numpy array
     image_array = tf.keras.utils.img_to_array(image, dtype=np.uint8)
-
-    # Add batch dimension (expand dims to make it (1, height, width, 3))
-    image_array = np.expand_dims(image_array, axis=0)
-
-    # Debug: Check if image has actual data
-    print(f"Image array shape: {image_array.shape}")
-    print(f"Image array min/max: {image_array.min()}/{image_array.max()}")
+    image_array = np.expand_dims(image_array, axis=0) # Create a batch
 
     return image_array
 
@@ -384,7 +369,7 @@ if __name__ == "__main__":
     hub_model = hub.load(MODEL_HANDLE)
     print('model loaded!')
 
-    image_np = load_image_into_numpy_array(args.image_path)
+    image_np = preprocess_image(args.image_path)
 
     # running inference
     print('Running inference...')

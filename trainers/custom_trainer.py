@@ -1,8 +1,8 @@
 import tensorflow as tf
-from tensorflow.keras import layers
-from tensorflow.keras import Model
+from tensorflow.keras import Model, layers
 from tensorflow.keras.optimizers import Adam
-from base_trainer import BaseTrainer
+
+from trainers import BaseTrainer
 
 
 class CustomTrainer(BaseTrainer):

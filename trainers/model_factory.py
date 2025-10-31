@@ -1,9 +1,9 @@
-from custom_trainer import CustomTrainer
-from efficientnet_b7_trainer import EfficientNetB7Trainer
-from inception_resnet_v2_trainer import InceptionResNetV2Trainer
-from vgg19_trainer import VGG19Trainer
-from resnet50_trainer import ResNet50Trainer
-from inception_v3_trainer import InceptionV3Trainer
+from trainers.vgg19_trainer import VGG19Trainer
+from trainers.resnet50_trainer import ResNet50Trainer
+from trainers.inception_v3_trainer import InceptionV3Trainer
+from trainers.custom_trainer import CustomTrainer
+from trainers.inception_resnet_v2_trainer import InceptionResNetV2Trainer
+from trainers.efficientnet_b7_trainer import EfficientNetB7Trainer
 
 
 class ModelFactory:

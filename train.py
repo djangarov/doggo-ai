@@ -1,6 +1,7 @@
 import argparse
 import os
-from model_factory import ModelFactory
+
+from trainers import ModelFactory
 
 
 def main():

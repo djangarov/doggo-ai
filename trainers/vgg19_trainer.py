@@ -1,7 +1,9 @@
 import tensorflow as tf
-from tensorflow.keras import Model
+from tensorflow import keras
+from tensorflow.keras import Model, layers
 from tensorflow.keras.optimizers import Adam
-from base_trainer import BaseTrainer
+
+from trainers import BaseTrainer
 
 
 class VGG19Trainer(BaseTrainer):
@@ -24,7 +26,7 @@ class VGG19Trainer(BaseTrainer):
         Returns VGG19 transfer learning model
         """
         # VGG19 base model
-        base_model = tf.keras.applications.VGG19(
+        base_model = keras.applications.VGG19(
             input_shape=(self.img_width, self.img_height, 3),
             include_top=False,
             weights='imagenet'
@@ -33,40 +35,40 @@ class VGG19Trainer(BaseTrainer):
         base_model.trainable = False  # Freeze base model
 
         # Add preprocessing and data augmentation
-        inputs = tf.keras.Input(shape=(self.img_width, self.img_height, 3))
+        inputs = keras.Input(shape=(self.img_width, self.img_height, 3))
 
         # Data augmentation
-        x = tf.keras.layers.RandomFlip("horizontal")(inputs)
-        x = tf.keras.layers.RandomRotation(0.15)(x)
-        x = tf.keras.layers.RandomZoom(0.15)(x)
-        x = tf.keras.layers.RandomBrightness(0.1)(x)
+        x = layers.RandomFlip("horizontal")(inputs)
+        x = layers.RandomRotation(0.15)(x)
+        x = layers.RandomZoom(0.15)(x)
+        x = layers.RandomBrightness(0.1)(x)
 
         # VGG19 preprocessing
-        x = tf.keras.applications.vgg19.preprocess_input(x)
+        x = keras.applications.vgg19.preprocess_input(x)
         x = base_model(x, training=False)
 
         # Add a named convolutional layer for Grad-CAM access
-        x = tf.keras.layers.Conv2D(
+        x = layers.Conv2D(
             512, (1, 1),
             activation='relu',
             name='grad_cam_conv'
         )(x)
 
         # Classification head
-        x = tf.keras.layers.GlobalAveragePooling2D()(x)
-        x = tf.keras.layers.Dropout(0.4)(x)
-        x = tf.keras.layers.Dense(1024, activation='relu')(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
-        x = tf.keras.layers.Dense(512, activation='relu')(x)
-        x = tf.keras.layers.Dropout(0.2)(x)
+        x = layers.GlobalAveragePooling2D()(x)
+        x = layers.Dropout(0.4)(x)
+        x = layers.Dense(1024, activation='relu')(x)
+        x = layers.Dropout(0.3)(x)
+        x = layers.Dense(512, activation='relu')(x)
+        x = layers.Dropout(0.2)(x)
 
-        outputs = tf.keras.layers.Dense(num_categories, activation='softmax')(x)
+        outputs = layers.Dense(num_categories, activation='softmax')(x)
 
-        model = tf.keras.Model(inputs, outputs)
+        model = Model(inputs, outputs)
 
         model.compile(
             optimizer=Adam(learning_rate=0.0001),
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            loss=keras.losses.SparseCategoricalCrossentropy(),
             metrics=['accuracy']
         )
 
