@@ -1,7 +1,6 @@
 import os
 import sys
 import argparse
-import numpy as np
 import keras
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
