@@ -3,6 +3,8 @@ import numpy as np
 import tensorflow as tf
 import keras
 
+from processors import ImageProcessor
+
 
 class PredictionResult:
     def __init__(self, predicted_class: int, confidence: float, predictions: np.ndarray, class_names: list = None):
@@ -18,7 +20,7 @@ class PredictionResult:
         return [(idx, self.predictions[idx]) for idx in top_indices]
 
 
-class ImagePredictor():
+class ImagePredictor(ImageProcessor):
     def __init__(self, model: keras.Model, dataset_dir: str | None = None):
         self.model = model
         self.dataset_dir = dataset_dir
@@ -33,21 +35,6 @@ class ImagePredictor():
                 class_names.append(class_dir)
 
         return class_names
-
-    def preprocess_image(self, image_path: str) -> tf.Tensor:
-        """
-        Preprocess a single image for prediction
-        """
-        image_size = self.model.input_shape[1:3]
-
-        # Read the image file
-        img = keras.utils.load_img(
-            image_path, target_size=image_size
-        )
-        img_array = keras.utils.img_to_array(img)
-        img_array = tf.expand_dims(img_array, 0) # Create a batch
-
-        return img_array
 
     def predict_image(self, image: tf.Tensor) -> PredictionResult | None:
         """

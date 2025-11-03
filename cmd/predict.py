@@ -4,7 +4,7 @@ import argparse
 import keras
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from predictors import ImagePredictor
+from processors import ImagePredictor
 
 
 def main():
@@ -36,7 +36,7 @@ def main():
 
     # Preprocess the image
     print(f"Processing image: {args.image_path}")
-    processed_image = predictor.preprocess_image(args.image_path)
+    processed_image = predictor.preprocess_image(args.image_path, predictor.model.input_shape[1:3])
 
     # Make prediction
     print("Making prediction...")
