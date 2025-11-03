@@ -41,28 +41,27 @@ def main():
 
     # Make prediction
     print("Making prediction...")
-    predicted_class, confidence, predictions, class_names = predictor.predict_image(processed_image)
+    prediction_result = predictor.predict_image(processed_image)
 
      # Get top 5 predictions
-    top_5_indices = np.argsort(predictions)[-5:][::-1]
-    top_5_confidences = predictions[top_5_indices]
+    top_5_predictions =  prediction_result.get_top(5)
 
     # Print results
     print("\n" + "="*50)
     print(f"PREDICTION RESULTS")
     print("="*50)
-    print(f"Predicted class ID: {predicted_class}")
-    print(f"Confidence: {confidence:.4f} ({confidence*100:.2f}%)")
+    print(f"Predicted class ID: {prediction_result.predicted_class}")
+    print(f"Confidence: {prediction_result.confidence:.4f} ({prediction_result.confidence*100:.2f}%)")
 
-    if class_names and predicted_class < len(class_names):
-        print(f"Predicted class name: {class_names[predicted_class]}")
+    if prediction_result.class_names and prediction_result.predicted_class < len(prediction_result.class_names):
+        print(f"Predicted class name: {prediction_result.class_names[prediction_result.predicted_class]}")
         print("\nTop 5 predictions:")
-        for i, (idx, conf) in enumerate(zip(top_5_indices, top_5_confidences)):
-            if idx < len(class_names):
-                print(f"{i+1}. {class_names[idx]}: {conf:.4f} ({conf*100:.2f}%)")
+        for i, (idx, conf) in enumerate(top_5_predictions):
+            if idx < len(prediction_result.class_names):
+                print(f"{i+1}. {prediction_result.class_names[idx]}: {conf:.4f} ({conf*100:.2f}%)")
     else:
         print("\nTop 5 predictions:")
-        for i, (idx, conf) in enumerate(zip(top_5_indices, top_5_confidences)):
+        for i, (idx, conf) in enumerate(top_5_predictions):
             print(f"{i+1}. Class {idx}: {conf:.4f} ({conf*100:.2f}%)")
 
 if __name__ == "__main__":

@@ -4,6 +4,20 @@ import tensorflow as tf
 import keras
 
 
+class PredictionResult:
+    def __init__(self, predicted_class: int, confidence: float, predictions: np.ndarray, class_names: list = None):
+        self.predicted_class = predicted_class
+        self.confidence = confidence
+        self.predictions = predictions
+        self.class_names = class_names
+
+    def get_top(self, k: int) -> list[tuple[int, float]]:
+        """Get top k predictions."""
+        top_indices = np.argsort(self.predictions)[-k:][::-1]
+
+        return [(idx, self.predictions[idx]) for idx in top_indices]
+
+
 class ImagePredictor():
     def __init__(self, model: keras.Model, dataset_dir: str | None = None):
         self.model = model
@@ -35,7 +49,7 @@ class ImagePredictor():
 
         return img_array
 
-    def predict_image(self, image: tf.Tensor):
+    def predict_image(self, image: tf.Tensor) -> PredictionResult | None:
         """
         Predict the class of a single image
         """
@@ -50,9 +64,10 @@ class ImagePredictor():
             predicted_class = np.argmax(predictions[0])
             confidence = predictions[0][predicted_class]
 
-            return predicted_class, confidence, predictions[0], class_names
+            return PredictionResult(predicted_class, confidence, predictions[0], class_names)
 
         except Exception as e:
             print(f"Error during prediction: {str(e)}")
 
-            return None, None
+            return None
+
