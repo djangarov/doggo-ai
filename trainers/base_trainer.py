@@ -147,7 +147,7 @@ class BaseTrainer(ABC):
         model.save(filename)
         print(f"Model saved to {filename}.")
 
-    def get_callbacks(self, model_name: str):
+    def get_callbacks(self, model_name: str) -> list[keras.callbacks.Callback]:
         """
         Get training callbacks
         """
