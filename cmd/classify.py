@@ -8,9 +8,9 @@ from processors import ImageClassifier
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Predict image class using trained model')
+    parser = argparse.ArgumentParser(description='Classify image class using trained model')
     parser.add_argument('model_path', help='Path to the trained model file (.keras)')
-    parser.add_argument('image_path', help='Path to the image to predict')
+    parser.add_argument('image_path', help='Path to the image to classify')
     parser.add_argument('dataset', help='Path to dataset directory for class names')
 
     args = parser.parse_args()

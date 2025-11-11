@@ -17,8 +17,8 @@ TARGET_CLASS = 18  # Dog class ID
 
 # Main execution
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Predict image class using trained model')
-    parser.add_argument('image_path', help='Path to the image to predict')
+    parser = argparse.ArgumentParser(description='Detect image objects using trained model')
+    parser.add_argument('image_path', help='Path to the image to detect')
     parser.add_argument('--output-dir', default='cropped_objects', help='Directory to save cropped images')
 
     args = parser.parse_args()
