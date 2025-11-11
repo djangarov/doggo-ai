@@ -4,7 +4,7 @@ import tensorflow_hub as hub
 
 from processors import ImageProcessor
 
-MODEL_HANDLE = 'https://tfhub.dev/tensorflow/mask_rcnn/inception_resnet_v2_1024x1024/1'
+MODEL_URL = 'https://tfhub.dev/tensorflow/mask_rcnn/inception_resnet_v2_1024x1024/1'
 
 class DetectionResult:
     def __init__(self, boxes, classes, scores, masks):
@@ -49,7 +49,7 @@ class COCOObjectDetector(ImageProcessor):
     }
 
     def __init__(self, min_score_thresh: float, target_class: int):
-        self.model = hub.load(MODEL_HANDLE)
+        self.model = hub.load(MODEL_URL)
         self.min_score_thresh = min_score_thresh
         self.target_class = target_class
 

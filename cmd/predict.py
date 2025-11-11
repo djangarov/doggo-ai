@@ -4,7 +4,7 @@ import argparse
 import keras
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from processors import ImagePredictor
+from processors import ImageClassifier
 
 
 def main():
@@ -32,15 +32,15 @@ def main():
     model = keras.models.load_model(args.model_path)
     print('Model loaded successfully!')
 
-    predictor = ImagePredictor(model, args.dataset)
+    classifier = ImageClassifier(model, args.dataset)
 
     # Preprocess the image
     print(f'Processing image: {args.image_path}')
-    processed_image = predictor.preprocess_image(args.image_path, predictor.model.input_shape[1:3])
+    processed_image = classifier.preprocess_image(args.image_path, classifier.model.input_shape[1:3])
 
     # Make prediction
     print('Making prediction...')
-    prediction_result = predictor.predict_image(processed_image)
+    prediction_result = classifier.predict_image(processed_image)
 
      # Get top 5 predictions
     top_5_predictions =  prediction_result.get_top(5)

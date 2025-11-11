@@ -6,7 +6,7 @@ import keras
 from processors import ImageProcessor
 
 
-class PredictionResult:
+class ClassifierResult:
     def __init__(self, predicted_class: int, confidence: float, predictions: np.ndarray, class_names: list = None):
         self.predicted_class = predicted_class
         self.confidence = confidence
@@ -20,7 +20,9 @@ class PredictionResult:
         return [(idx, self.predictions[idx]) for idx in top_indices]
 
 
-class ImagePredictor(ImageProcessor):
+class ImageClassifier(ImageProcessor):
+    """Classifies images using a trained machine learning model."""
+
     def __init__(self, model: keras.Model, dataset_dir: str | None = None):
         self.model = model
         self.dataset_dir = dataset_dir
@@ -36,7 +38,7 @@ class ImagePredictor(ImageProcessor):
 
         return class_names
 
-    def predict_image(self, image: tf.Tensor) -> PredictionResult | None:
+    def predict_image(self, image: tf.Tensor) -> ClassifierResult | None:
         """
         Predict the class of a single image
         """
@@ -51,7 +53,7 @@ class ImagePredictor(ImageProcessor):
             predicted_class = np.argmax(predictions[0])
             confidence = predictions[0][predicted_class]
 
-            return PredictionResult(predicted_class, confidence, predictions[0], class_names)
+            return ClassifierResult(predicted_class, confidence, predictions[0], class_names)
 
         except Exception as e:
             print(f'Error during prediction: {str(e)}')
