@@ -2,11 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import tensorflow as tf
 import keras
-import matplotlib
 import matplotlib.pyplot as plt
-
-matplotlib.use('TkAgg')  # Set backend for interactive plots
-plt.ion()  # Enable interactive mode
 
 
 class BaseTrainer(ABC):
