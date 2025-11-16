@@ -168,7 +168,7 @@ class BaseTrainer(ABC):
                 verbose=1
             ),
             keras.callbacks.ReduceLROnPlateau(
-                factor=0.5,
+                factor=0.2,
                 patience=5,
                 min_lr=1e-7,
                 monitor='val_accuracy',
@@ -212,7 +212,8 @@ class BaseTrainer(ABC):
             train_dataset,
             validation_data=validation_dataset,
             epochs=self.epochs,
-            callbacks=callbacks
+            callbacks=callbacks,
+            verbose=1
         )
 
         # Evaluate neural network performance
