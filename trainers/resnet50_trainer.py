@@ -11,7 +11,7 @@ class ResNet50Trainer(BaseTrainer):
     def __init__(self) -> None:
         super().__init__(
             model_name='ResNet50',
-            epochs=30,
+            epochs=20,
             batch_size=16,  # Adjusted for ResNet50 memory requirements
             image_width=224,
             image_height=224)  # ResNet50 specific settings
@@ -39,8 +39,8 @@ class ResNet50Trainer(BaseTrainer):
 
         # Data augmentation layers
         x = keras.layers.RandomFlip('horizontal')(inputs)
-        x = keras.layers.RandomRotation(0.15)(x)
-        x = keras.layers.RandomZoom(0.15)(x)
+        x = keras.layers.RandomRotation(0.1)(x)
+        x = keras.layers.RandomZoom(0.1)(x)
         x = keras.layers.RandomContrast(0.1)(x)
         x = keras.layers.RandomBrightness(0.1)(x)
         x = keras.layers.RandomTranslation(0.1, 0.1)(x)

@@ -162,16 +162,18 @@ class BaseTrainer(ABC):
         """
         return [
             keras.callbacks.EarlyStopping(
-                patience=8,
+                patience=10,
                 restore_best_weights=True,
                 monitor='val_accuracy',
+                min_delta=0.001,
+                restore_best_weights=True,
                 verbose=1
             ),
             keras.callbacks.ReduceLROnPlateau(
                 factor=0.2,
                 patience=5,
                 min_lr=1e-7,
-                monitor='val_accuracy',
+                monitor='val_loss',
                 verbose=1
             ),
             keras.callbacks.ModelCheckpoint(
