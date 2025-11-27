@@ -21,6 +21,8 @@ def draw_and_save_detection_boxes(image_name: str, tensor_image: tf.Tensor, dete
     _, ax = plt.subplots(1, figsize=(12, 8))
     ax.imshow(tensor_image[0])
 
+    composite_image = None
+
     for detection_box in detection_boxes.values():
         # Draw the bounding box
         rect = patches.Rectangle((detection_box['rectangle']['left'], detection_box['rectangle']['top']),
@@ -32,6 +34,13 @@ def draw_and_save_detection_boxes(image_name: str, tensor_image: tf.Tensor, dete
         ax.text(rect.get_x(), rect.get_y() - 10, detection_box['label'], fontsize=12, color='white',
                 bbox=dict(boxstyle='round,pad=0.3', facecolor=detection_box['color'], alpha=0.8))
 
+        if 'image' in detection_box:
+            composite_image = detection_box['image']
+
+    # Display the composite image
+    if composite_image is not None:
+        ax.imshow(composite_image.astype(np.uint8))
+
     ax.set_title(f'Object Detection Results ({len(detection_boxes)} objects found)', fontsize=16)
     ax.axis('off')
     plt.tight_layout()
@@ -40,7 +49,6 @@ def draw_and_save_detection_boxes(image_name: str, tensor_image: tf.Tensor, dete
     filepath = os.path.join(output_dir, filename)
 
     plt.savefig(filepath, format='jpg', dpi=300, bbox_inches='tight')
-    plt.show()
 
 def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, output_dir: str) -> str:
     for detection_count, cropped_image in cropped_images.items():
@@ -78,39 +86,27 @@ def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, outpu
         print(f'Predicted class ID: {prediction_result.predicted_class}')
         print(f'Confidence: {prediction_result.confidence:.4f} ({prediction_result.confidence*100:.2f}%)')
 
-        if prediction_result.class_names and prediction_result.predicted_class < len(prediction_result.class_names):
-            print(f'Predicted class name: {prediction_result.class_names[prediction_result.predicted_class]}')
-            print('\nTop 5 predictions:')
-            for i, (idx, conf) in enumerate(top_5_predictions):
-                if idx < len(prediction_result.class_names):
-                    print(f'{i+1}. {prediction_result.class_names[idx]}: {conf:.4f} ({conf*100:.2f}%)')
-                    prediction_data['top_5_predictions'].append({
-                        'rank': i + 1,
-                        'class_id': int(idx),
-                        'class_name': prediction_result.class_names[idx],
-                        'confidence': float(conf),
-                        'confidence_percentage': float(conf * 100)
-                    })
-        else:
-            print('\nTop 5 predictions:')
-            for i, (idx, conf) in enumerate(top_5_predictions):
-                print(f'{i+1}. Class {idx}: {conf:.4f} ({conf*100:.2f}%)')
+        print(f'Predicted class name: {prediction_result.class_names[prediction_result.predicted_class]}')
+        print('\nTop 5 predictions:')
+        for i, (idx, conf) in enumerate(top_5_predictions):
+            if idx < len(prediction_result.class_names):
+                print(f'{i+1}. {prediction_result.class_names[idx]}: {conf:.4f} ({conf*100:.2f}%)')
                 prediction_data['top_5_predictions'].append({
                     'rank': i + 1,
                     'class_id': int(idx),
-                    'class_name': f'Class {idx}',
+                    'class_name': prediction_result.class_names[idx],
                     'confidence': float(conf),
                     'confidence_percentage': float(conf * 100)
                 })
 
-    # Save to JSON file
-    json_filename = f"{filename}.json"
-    json_filepath = os.path.join(output_dir, json_filename)
+        # Save to JSON file
+        json_filename = f"{filename}.json"
+        json_filepath = os.path.join(output_dir, json_filename)
 
-    with open(json_filepath, 'w', encoding='utf-8') as f:
-        json.dump(prediction_data, f, indent=2)
+        with open(json_filepath, 'w', encoding='utf-8') as f:
+            json.dump(prediction_data, f, indent=2)
 
-    print(f'Predictions saved to: {json_filepath}')
+        print(f'Predictions saved to: {json_filepath}')
 
     print(f'Saved {len(cropped_images)} cropped images')
 
@@ -134,7 +130,8 @@ def main():
         sys.exit(1)
 
     if not os.path.exists(args.dataset):
-        print(f'Warning: Dataset directory {args.dataset} not found! Class names will not be displayed.')
+        print(f'Warning: Dataset directory {args.dataset} not found!')
+        sys.exit(1)
 
     print('Loading model...')
     coco_detector = COCOObjectDetector(MIN_SCORE_THRESH, TARGET_CLASS)
