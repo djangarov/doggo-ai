@@ -10,7 +10,7 @@ class InceptionV3Trainer(BaseTrainer):
 
     def __init__(self) -> None:
         super().__init__(
-            model_name='InceptionV3',
+            model_type='InceptionV3',
             epochs=25,
             batch_size=16,  # Adjusted for InceptionV3 memory requirements
             image_width=299,

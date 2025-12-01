@@ -10,7 +10,7 @@ class ResNet50Trainer(BaseTrainer):
 
     def __init__(self) -> None:
         super().__init__(
-            model_name='ResNet50',
+            model_type='ResNet50',
             epochs=20,
             batch_size=16,  # Adjusted for ResNet50 memory requirements
             image_width=224,

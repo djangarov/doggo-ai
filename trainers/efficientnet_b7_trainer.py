@@ -10,7 +10,7 @@ class EfficientNetB7Trainer(BaseTrainer):
 
     def __init__(self) -> None:
         super().__init__(
-            model_name='EfficientNetB7',
+            model_type='EfficientNetB7',
             epochs=50,
             batch_size=10,  # Adjusted for EfficientNetB7 memory requirements
             image_width=600,

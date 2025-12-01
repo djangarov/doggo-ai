@@ -10,7 +10,7 @@ class InceptionResNetV2Trainer(BaseTrainer):
 
     def __init__(self) -> None:
         super().__init__(
-            model_name='InceptionResNetV2',
+            model_type='InceptionResNetV2',
             epochs=30,
             batch_size=16,  # Adjusted for InceptionResNetV2 memory requirements
             image_width=299,

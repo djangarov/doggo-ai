@@ -10,7 +10,7 @@ class VGG19Trainer(BaseTrainer):
 
     def __init__(self) -> None:
         super().__init__(
-            model_name='VGG19',
+            model_type='VGG19',
             epochs=20,
             batch_size=16,  # Adjusted for VGG19 memory requirements
             image_width=224,

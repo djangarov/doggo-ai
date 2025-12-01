@@ -11,7 +11,7 @@ class BaseTrainer(ABC):
     """
 
     def __init__(self,
-                 model_name: str,
+                 model_type: str,
                  epochs: int = 50,
                  batch_size: int = 32,
                  image_width: int = 150,
@@ -19,7 +19,7 @@ class BaseTrainer(ABC):
         """
         Initialize the base trainer with the given parameters.
         """
-        self.model_name = model_name
+        self.model_type = model_type
         self.epochs = epochs
         self.batch_size = batch_size
         self.img_width = image_width
@@ -205,7 +205,7 @@ class BaseTrainer(ABC):
         model = self.get_model(num_categories)
         model.summary()
 
-        model_name = custom_model_name if custom_model_name else self.model_name
+        model_name = custom_model_name if custom_model_name else self.model_type
         callbacks = self.get_callbacks(model_name)
 
         # Fit model on training data
