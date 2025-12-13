@@ -1,11 +1,15 @@
+import os
+from pathlib import Path
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
-from typing import Dict, Any
 
 from processors import ImageProcessor
 
 MODEL_URL = 'https://tfhub.dev/tensorflow/mask_rcnn/inception_resnet_v2_1024x1024/1'
+PROJECT_ROOT = Path(__file__).parent.parent
+STORAGE_DIR = f'{PROJECT_ROOT}/storage/models/'
+MODEL_NAME = 'mask_rcnn_inception_resnet_v2_1024x1024'
 
 class DetectionResult:
     def __init__(self,
@@ -56,9 +60,24 @@ class COCOObjectDetector(ImageProcessor):
     def __init__(self,
                  min_score_thresh: float,
                  target_class: int) -> None:
-        self.model = hub.load(MODEL_URL)
+        self.model = self.__load_model()
         self.min_score_thresh = min_score_thresh
         self.target_class = target_class
+
+    def __load_model(self) -> hub.KerasLayer:
+        """
+        Load the pre-trained Mask R-CNN model from TensorFlow Hub.
+        """
+        path = f'{STORAGE_DIR}{MODEL_NAME}'
+
+        if os.path.exists(path):
+            model = hub.load(path)
+            return model
+
+        model = hub.load(MODEL_URL)
+        tf.saved_model.save(model, path)
+
+        return model
 
     def detect(self, image: tf.Tensor) -> DetectionResult:
         """
