@@ -35,23 +35,15 @@ class BaseTrainer(ABC):
         Load image data from directory `data_dir`.
         """
         try:
-            train_dataset = keras.utils.image_dataset_from_directory(
+            dataset = keras.utils.image_dataset_from_directory(
                 data_dir,
                 validation_split=0.2,
-                subset='training',
+                subset='both',
                 seed=123,
                 image_size=(self.img_height, self.img_width),
                 batch_size=self.batch_size)
 
-            validation_dataset = keras.utils.image_dataset_from_directory(
-                data_dir,
-                validation_split=0.2,
-                subset='validation',
-                seed=123,
-                image_size=(self.img_height, self.img_width),
-                batch_size=self.batch_size)
-
-            return train_dataset, validation_dataset
+            return dataset[0], dataset[1]
         except tf.errors.InvalidArgumentError as e:
             print(f'Image format error: {e}')
             raise
