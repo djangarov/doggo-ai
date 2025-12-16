@@ -26,9 +26,11 @@ class VGG19Trainer(BaseTrainer):
         Returns:
             Compiled Keras model with frozen VGG19 base and custom head
         """
+        input_shape = (self.img_height, self.img_width, 3)
+
         # VGG19 base model pre-trained on ImageNet
         base_model = keras.applications.VGG19(
-            input_shape=(self.img_height, self.img_width, 3),
+            input_shape=input_shape,
             include_top=False,
             weights='imagenet'
         )
@@ -36,7 +38,7 @@ class VGG19Trainer(BaseTrainer):
         base_model.trainable = False  # Freeze base model for transfer learning
 
         # Add preprocessing and data augmentation
-        inputs = keras.Input(shape=(self.img_height, self.img_width, 3))
+        inputs = keras.Input(shape=input_shape)
 
         # Data augmentation layers
         x = keras.layers.RandomFlip('horizontal')(inputs)

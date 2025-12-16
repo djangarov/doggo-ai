@@ -25,7 +25,7 @@ uv run cmd/coco_detect.py storage/test-images/{IMAGE} storage/{RESULT DIR}
 
 ### train
 ```
-uv run cmd/train.py {TYPE} ./storage/datasets/stanford-dogs-dataset --model_name={MODEL NAME}
+uv run cmd/train.py {TYPE} storage/datasets/stanford-dogs-dataset --model_name={MODEL NAME}
 ```
 
 ##### TYPES:

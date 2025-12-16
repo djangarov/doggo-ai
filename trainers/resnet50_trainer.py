@@ -11,7 +11,7 @@ class ResNet50Trainer(BaseTrainer):
     def __init__(self) -> None:
         super().__init__(
             model_type='ResNet50',
-            epochs=35,
+            epochs=20,
             batch_size=16,  # Adjusted for ResNet50 memory requirements
             image_width=224,
             image_height=224)  # ResNet50 specific settings
@@ -26,16 +26,18 @@ class ResNet50Trainer(BaseTrainer):
         Returns:
             Compiled Keras model with frozen ResNet50 base and custom head
         """
+        input_shape = (self.img_height, self.img_width, 3)
+
         # ResNet50 base model pre-trained on ImageNet
         base_model = keras.applications.ResNet50(
-            input_shape=(self.img_height, self.img_width, 3),
+            input_shape=input_shape,
             include_top=False,  # Exclude top classification layer
             weights='imagenet'  # Use ImageNet pre-trained weights
         )
 
         base_model.trainable = False  # Freeze base model for transfer learning
 
-        inputs = keras.Input(shape=(self.img_height, self.img_width, 3))
+        inputs = keras.Input(shape=input_shape)
 
         # Data augmentation layers
         x = keras.layers.RandomFlip('horizontal')(inputs)
@@ -58,13 +60,13 @@ class ResNet50Trainer(BaseTrainer):
 
         # Classification head with regularization
         x = keras.layers.GlobalAveragePooling2D()(x)
-        x = keras.layers.Dropout(0.5)(x)
+        x = keras.layers.Dropout(0.3)(x)
         # Add L2 regularization
         x = keras.layers.Dense(512,
                                activation='relu',
                                kernel_regularizer=keras.regularizers.l2(0.001))(x)
         x = keras.layers.BatchNormalization()(x)
-        x = keras.layers.Dropout(0.3)(x)
+        x = keras.layers.Dropout(0.2)(x)
 
         # Output layer for multi-class classification
         outputs = keras.layers.Dense(num_categories,
@@ -77,7 +79,7 @@ class ResNet50Trainer(BaseTrainer):
         model.compile(
             optimizer=keras.optimizers.Adam(
                 learning_rate=0.0003,
-                weight_decay=0.00005
+                weight_decay=0.0002
             ),
             loss=keras.losses.SparseCategoricalCrossentropy(),
             metrics=['accuracy']

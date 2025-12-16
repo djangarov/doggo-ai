@@ -26,16 +26,18 @@ class EfficientNetB7Trainer(BaseTrainer):
         Returns:
             Compiled Keras model with frozen EfficientNetB7 base and custom head
         """
+        input_shape = (self.img_height, self.img_width, 3)
+
         # Load EfficientNetB7 base model pre-trained on ImageNet
         base_model = keras.applications.EfficientNetB7(
-            input_shape=(self.img_height, self.img_width, 3),
+            input_shape=input_shape,
             include_top=False,  # Exclude top classification layer
             weights='imagenet'  # Use ImageNet pre-trained weights
         )
 
         base_model.trainable = False  # Freeze base model for transfer learning
 
-        inputs = keras.Input(shape=(self.img_height, self.img_width, 3))
+        inputs = keras.Input(shape=input_shape)
 
         # Data augmentation layers
         x = keras.layers.RandomFlip('horizontal')(inputs)
