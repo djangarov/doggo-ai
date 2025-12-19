@@ -1,9 +1,9 @@
 import keras
 
-from trainers import BaseTrainer
+from trainers import AbstractTrainer
 
 
-class CustomTrainer(BaseTrainer):
+class CustomTrainer(AbstractTrainer):
     """
     Custom model trainer
     """

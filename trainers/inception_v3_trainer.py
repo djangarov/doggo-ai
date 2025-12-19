@@ -1,9 +1,9 @@
 import keras
 
-from trainers import BaseTrainer
+from trainers import AbstractTrainer
 
 
-class InceptionV3Trainer(BaseTrainer):
+class InceptionV3Trainer(AbstractTrainer):
     """
     InceptionV3 model trainer
     """

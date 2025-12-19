@@ -5,7 +5,7 @@ import keras
 import matplotlib.pyplot as plt
 
 
-class BaseTrainer(ABC):
+class AbstractTrainer(ABC):
     """
     Abstract base class for training different CNN models
     """

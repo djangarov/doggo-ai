@@ -1,9 +1,9 @@
 import keras
 
-from trainers import BaseTrainer
+from trainers import AbstractTrainer
 
 
-class EfficientNetB7Trainer(BaseTrainer):
+class EfficientNetB7Trainer(AbstractTrainer):
     """
     EfficientNetB7 model trainer
     """

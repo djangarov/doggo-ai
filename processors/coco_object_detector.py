@@ -59,23 +59,29 @@ class COCOObjectDetector(ImageProcessor):
 
     def __init__(self,
                  min_score_thresh: float,
-                 target_class: int) -> None:
-        self.model = self.__load_model()
+                 target_class: int,
+                 model_url: str = MODEL_URL,
+                 storage_dir: str = STORAGE_DIR,
+                 model_name: str = MODEL_NAME) -> None:
         self.min_score_thresh = min_score_thresh
         self.target_class = target_class
+        self.model_url = model_url
+        self.storage_dir = storage_dir
+        self.model_name = model_name
+        self.model = self.__load_model()
 
     def __load_model(self) -> hub.KerasLayer:
         """
         Load the pre-trained Mask R-CNN model from TensorFlow Hub.
         """
-        path = f'{STORAGE_DIR}{MODEL_NAME}'
+        path = f'{self.storage_dir}{self.model_name}'
 
         try:
             if os.path.exists(path):
                 model = hub.load(path)
                 return model
 
-            model = hub.load(MODEL_URL)
+            model = hub.load(self.model_url)
             tf.saved_model.save(model, path)
 
             return model

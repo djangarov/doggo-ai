@@ -1,9 +1,9 @@
 import keras
 
-from trainers import BaseTrainer
+from trainers import AbstractTrainer
 
 
-class ResNet50Trainer(BaseTrainer):
+class ResNet50Trainer(AbstractTrainer):
     """
     ResNet50 model trainer
     """

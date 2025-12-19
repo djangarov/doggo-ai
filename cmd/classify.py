@@ -1,7 +1,12 @@
-import argparse
-import json
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import argparse
+import json
+import re
 from time import time
 
 import keras
@@ -12,6 +17,8 @@ from PIL import Image
 import tensorflow as tf
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from llms import OllamaClient, GemClient
+from llms.prompts import OWNER_FOCUSED_BREED_DETAILS
 from processors import COCOObjectDetector, ImageClassifier
 
 MIN_SCORE_THRESH = 0.3
@@ -50,7 +57,7 @@ def draw_and_save_detection_boxes(image_name: str, tensor_image: tf.Tensor, dete
 
     plt.savefig(filepath, format='jpg', dpi=300, bbox_inches='tight')
 
-def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, output_dir: str) -> str:
+def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, output_dir: str) -> None:
     for detection_count, cropped_image in cropped_images.items():
         # Create filename
         filename = f"{cropped_image['class_name']}_{detection_count:03d}_score_{cropped_image['score']:.2f}"
@@ -179,7 +186,7 @@ def main():
     proceed_predictions(cropped_images, classifier, output_dir)
 
     # Handle models with masks
-    print('Model supports instance segmentation masks!')
+    print('\nModel supports instance segmentation masks!')
     masks = results.masks
 
     # Draw masks
@@ -197,6 +204,16 @@ def main():
         proceed_predictions(cropped_mask_images, classifier, output_masked_dir)
 
     print('Object detection completed!')
+
+    # result = re.sub(r'[-_]', ' ', re.sub(r'^[^-]*-', '', 'sintetic-jack-russell-terrier'))
+    # question = OWNER_FOCUSED_BREED_DETAILS.format(breed=result)
+    # print('\nAsking Ollama LLM for more details about the breed...')
+    # ollama_client = OllamaClient()
+    # ollama_client.chat(question)
+
+    # print('\nAsking Gemini LLM for more details about the breed...')
+    # gem_client = GemClient()
+    # gem_client.stream_chat(question)
 
 
 if __name__ == '__main__':

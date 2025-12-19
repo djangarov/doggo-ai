@@ -1,9 +1,9 @@
 import keras
 
-from trainers import BaseTrainer
+from trainers import AbstractTrainer
 
 
-class InceptionResNetV2Trainer(BaseTrainer):
+class InceptionResNetV2Trainer(AbstractTrainer):
     """
     InceptionResNetV2 model trainer
     """
@@ -60,11 +60,11 @@ class InceptionResNetV2Trainer(BaseTrainer):
 
         # Classification head with regularization
         x = keras.layers.GlobalAveragePooling2D()(x)
-        x = keras.layers.Dropout(0.15)(x)
+        x = keras.layers.Dropout(0.10)(x)
         x = keras.layers.Dense(512,
                                activation='relu',
                                kernel_regularizer=keras.regularizers.l2(0.0005))(x)
-        x = keras.layers.Dropout(0.08)(x)
+        x = keras.layers.Dropout(0.075)(x)
 
         # Output layer for multi-class classification
         outputs = keras.layers.Dense(num_categories,

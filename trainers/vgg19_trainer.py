@@ -1,9 +1,9 @@
 import keras
 
-from trainers import BaseTrainer
+from trainers import AbstractTrainer
 
 
-class VGG19Trainer(BaseTrainer):
+class VGG19Trainer(AbstractTrainer):
     """
     VGG19 model trainer
     """
