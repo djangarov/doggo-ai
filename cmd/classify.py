@@ -138,7 +138,7 @@ def get_info_for_prediction(predictions: list[dict], predictions_masked: list[di
 
         asked_for.append(top_class_name)
         print('\n' + '='*50)
-        print(f'Asking LLM for details about: {top_class_name}')
+        print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {top_class_name}')
         print('\n' + '='*50)
         question = OWNER_FOCUSED_BREED_DETAILS.format(breed=top_class_name)
         llm_client.stream_chat(question)
@@ -232,11 +232,9 @@ def main():
 
     print('Object detection completed!')
 
-    print('\nAsking Ollama LLM for more details about the dog breed...')
     ollama_client = OllamaClient()
     get_info_for_prediction(predictions_result, predictions_result_masked, ollama_client)
 
-    print('\nAsking Gemini LLM for more details about the dog breed...')
     gem_client = GemClient()
     get_info_for_prediction(predictions_result, predictions_result_masked, gem_client)
 
