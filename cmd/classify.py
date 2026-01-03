@@ -14,8 +14,8 @@ from PIL import Image
 import tensorflow as tf
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from llms import OllamaClient, GemClient, ClientInterface
-from llms.prompts import BREED_DETAILS_TASK
+from llms import OllamaClient, GemClient, GemImageClient, ChatClientInterface, ImageClientInterface
+from llms.prompts import BREED_DETAILS_TASK, DOG_TRAINER_WITH_SPECIFIC_BREAD_TASK
 from processors import COCOObjectDetector, ImageClassifier
 
 load_dotenv()
@@ -122,8 +122,8 @@ def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, outpu
 
     return predictions_result
 
-def get_info_for_prediction(predictions: list[dict], predictions_masked: list[dict] | None, llm_client: ClientInterface) -> None:
-    asked_for = []
+def get_top_prediction_class_name(predictions: list[dict], predictions_masked: list[dict] | None) -> set[str]:
+    top_class_names = set()
 
     for idx, prediction in enumerate(predictions):
         top_prediction = prediction['predicted_class_name']
@@ -132,17 +132,27 @@ def get_info_for_prediction(predictions: list[dict], predictions_masked: list[di
             top_prediction = prediction['predicted_class_name'] if prediction['confidence'] >= predictions_masked[idx]['confidence'] else predictions_masked[idx]['predicted_class_name']
 
         top_class_name = re.sub(r'[-_]', ' ', re.sub(r'^[^-]*-', '', top_prediction))
+        top_class_names.add(top_class_name)
 
-        if top_class_name in asked_for:
-            continue  # Skip if already asked for this class
+    return top_class_names
 
-        asked_for.append(top_class_name)
+def get_info_for_prediction(predictions: set[str], llm_client: ChatClientInterface) -> None:
+    for prediction in predictions:
         print('\n' + '='*50)
-        print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {top_class_name}')
+        print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {prediction}')
         print('\n' + '='*50)
-        question = BREED_DETAILS_TASK.format(breed=top_class_name)
+        question = BREED_DETAILS_TASK.format(breed=prediction)
         llm_client.stream_chat(question)
 
+def generate_dog_trainer_image(predictions: set[str], llm_client: ImageClientInterface, output_dir: str) -> None:
+    for prediction in predictions:
+        print('\n' + '='*50)
+        print(f'Asking LLM ({llm_client.__class__.__name__}) to generate image for breed: {prediction}')
+        print('\n' + '='*50)
+        prompt = DOG_TRAINER_WITH_SPECIFIC_BREAD_TASK.format(breed=prediction)
+        llm_client.generate(prompt, output_dir + f'/{prediction.replace(' ', '_')}_trainer_image')
+
+        return  # Generate only one image for the first prediction
 
 def main():
     parser = argparse.ArgumentParser(description='Classify image class using trained model')
@@ -232,12 +242,17 @@ def main():
 
     print('Object detection completed!')
 
+    top_predictions = get_top_prediction_class_name(predictions_result, predictions_result_masked)
+    print(f'Top predicted class names: {top_predictions}')
+
     ollama_client = OllamaClient()
-    get_info_for_prediction(predictions_result, predictions_result_masked, ollama_client)
+    get_info_for_prediction(top_predictions, ollama_client)
 
     gem_client = GemClient()
-    get_info_for_prediction(predictions_result, predictions_result_masked, gem_client)
+    get_info_for_prediction(top_predictions, gem_client)
 
+    # gem_image_client = GemImageClient()
+    # generate_dog_trainer_image(top_predictions, gem_image_client, output_dir)
 
 if __name__ == '__main__':
     main()

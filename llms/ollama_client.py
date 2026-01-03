@@ -1,12 +1,12 @@
 from ollama import ChatResponse, chat
 
-from llms import ClientInterface
+from llms.chat_client_interface import ChatClientInterface
 from llms.prompts import CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER
 
 
 MODEL = 'ministral-3'
 
-class OllamaClient(ClientInterface):
+class OllamaClient(ChatClientInterface):
     def __init__(self, model: str = MODEL) -> None:
         self.model = model
 
