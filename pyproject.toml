@@ -1,5 +1,5 @@
 [project]
-name = "Doggo AI"
+name = "Doggo-AI"
 version = "0.1.0"
 description = "Clasify dog breeds from images using AI models."
 readme = "README.md"
