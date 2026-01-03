@@ -158,7 +158,7 @@ wheels = [
 ]
 
 [[package]]
-name = "dental"
+name = "Doggo AI"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
