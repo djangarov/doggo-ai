@@ -10,7 +10,7 @@ class OllamaClient(ClientInterface):
     def __init__(self, model: str = MODEL) -> None:
         self.model = model
 
-    def chat(self, message: str) -> None:
+    def chat(self, message: str) -> str:
         try:
             response = chat(
                 model=self.model,
@@ -19,7 +19,7 @@ class OllamaClient(ClientInterface):
                 options={'temperature': 0.4},
             )
 
-            print(response.message.content)
+            return response.message.content
         except Exception as e:
             print(f"An error occurred during ollama chat: {e}")
 

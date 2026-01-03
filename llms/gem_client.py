@@ -18,7 +18,7 @@ class GemClient(ClientInterface):
 
         self.client = genai.Client(api_key=api_key)
 
-    def chat(self, message: str) -> None:
+    def chat(self, message: str) -> str:
         try:
             response = self.client.models.generate_content(
                 model=self.model,
@@ -26,7 +26,7 @@ class GemClient(ClientInterface):
                 config=self._build_config(),
             )
 
-            print(response.text)
+            return response.text
         except Exception as e:
             print(f"An error occurred during gemini chat: {e}")
 
