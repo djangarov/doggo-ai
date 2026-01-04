@@ -10,7 +10,7 @@ from llms.prompts import CONFIG_PERSONALITY_PROFESSIONAL_DOG_TRAINER
 load_dotenv()
 
 def start_conversation(chat_client: ChatClientInterface):
-    messages = []
+    session_messages = chat_client.build_initial_session()
 
     while True:
         user_input = input('You: ')
@@ -19,11 +19,11 @@ def start_conversation(chat_client: ChatClientInterface):
             print('Exiting chat...')
             break
 
-        messages.append(user_input)
+        session_messages.add_message(user_input)
 
         print('Assistant: ', end='', flush=True)
-        response = chat_client.stream_chat(messages)
-        messages.append(response)
+        response = chat_client.stream_chat(session_messages)
+        session_messages.add_message(response)
         print()  # For newline after streaming response
 
 def main():

@@ -1,20 +1,24 @@
 from ollama import ChatResponse, chat
 
-from llms.chat_client_interface import ChatClientInterface
+from llms.chat_client_interface import ChatClientInterface, ChatSessionInterface
 
 
 MODEL = 'ministral-3'
+
+class OllamaSession(ChatSessionInterface):
+    def add_message(self, message: str) -> None:
+        self.messages.append({'role': 'user', 'content': message})
 
 class OllamaClient(ChatClientInterface):
     def __init__(self, personality: str, model: str = MODEL) -> None:
         self.model = model
         self.personality = personality
 
-    def chat(self, messages: list[str]) -> str:
+    def chat(self, session: OllamaSession) -> str:
         try:
             response = chat(
                 model=self.model,
-                messages=self._build_messages(messages),
+                messages=session.messages,
                 stream=False,
                 options={'temperature': 0.4},
             )
@@ -23,11 +27,11 @@ class OllamaClient(ChatClientInterface):
         except Exception as e:
             print(f"An error occurred during ollama chat: {e}")
 
-    def stream_chat(self, messages: list[str]) -> str:
+    def stream_chat(self, session: OllamaSession) -> str:
         try:
             stream = chat(
                 model=self.model,
-                messages=self._build_messages(messages),
+                messages=session.messages,
                 stream=True,
                 options={'temperature': 0.4},
             )
@@ -37,12 +41,20 @@ class OllamaClient(ChatClientInterface):
             print(f"An error occurred during ollama stream chat: {e}")
 
     def _get_personality(self) -> dict:
+        """Return the personality as a system message"""
         return {'role': 'system', 'content': self.personality}
 
-    def _build_messages(self, messages: list[str]) -> list[dict]:
-        return [self._get_personality()] + [{'role': 'user', 'content': message} for message in messages]
+    def build_initial_session(self, messages: list[str]|None = None) -> OllamaSession:
+        """Build messages for the LLM. Add personallity and append user messages if any."""
+        initial = [self._get_personality()]
+
+        if messages:
+            initial.extend([{'role': 'user', 'content': message} for message in messages])
+
+        return OllamaSession(initial)
 
     def _handle_stream(self, stream: ChatResponse) -> str:
+        """Handle streaming response from Ollama"""
         response = ''
 
         for chunk in stream:

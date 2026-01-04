@@ -143,7 +143,8 @@ def get_info_for_prediction(predictions: set[str], llm_client: ChatClientInterfa
         print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {prediction}')
         print('\n' + '='*50)
         question = BREED_DETAILS_TASK.format(breed=prediction)
-        llm_client.stream_chat([question])
+        messages = llm_client.build_initial_session([question])
+        llm_client.stream_chat(messages)
 
 def generate_dog_trainer_image(predictions: set[str], llm_client: ImageClientInterface, output_dir: str) -> None:
     for prediction in predictions:

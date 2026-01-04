@@ -25,10 +25,10 @@ uv run cmd/coco_detect.py storage/test-images/{IMAGE} storage/{RESULT DIR}
 
 ### train
 ```
-uv run cmd/train.py {TYPE} storage/datasets/stanford-dogs-dataset --model_name={MODEL NAME}
+uv run cmd/train.py {CNN TYPE} storage/datasets/stanford-dogs-dataset --model_name={MODEL NAME}
 ```
 
-##### TYPES:
+##### CNN TYPES:
 1. vgg19
 2. resnet50
 3. inception_v3
@@ -38,3 +38,14 @@ uv run cmd/train.py {TYPE} storage/datasets/stanford-dogs-dataset --model_name={
 
 ##### model_name
 If missing the model type will be used as name.
+
+
+### chat
+Chat with AI assistance
+```
+uv run cmd/chat.py {ASSISTANCE TYPE}
+```
+
+##### ASSIStANCE TYPES:
+1. ollama
+2. gemini
