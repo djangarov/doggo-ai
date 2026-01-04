@@ -8,7 +8,7 @@ class ChatSessionInterface():
 
 
 class ChatClientInterface():
-    def stream_chat(self, session: ChatSessionInterface) -> None:
+    def stream_chat(self, session: ChatSessionInterface) -> str:
         """Send a message to the LLM and return stream response"""
         raise NotImplementedError("stream_chat method not implemented.")
 
