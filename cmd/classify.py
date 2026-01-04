@@ -15,7 +15,7 @@ import tensorflow as tf
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from llms import OllamaClient, GemClient, GemImageClient, ChatClientInterface, ImageClientInterface
-from llms.prompts import BREED_DETAILS_TASK, DOG_TRAINER_WITH_SPECIFIC_BREAD_TASK
+from llms.prompts import BREED_DETAILS_TASK, CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER, DOG_TRAINER_WITH_SPECIFIC_BREAD_TASK
 from processors import COCOObjectDetector, ImageClassifier
 
 load_dotenv()
@@ -92,6 +92,7 @@ def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, outpu
         print('\n' + '='*50)
         print(f'PREDICTION RESULTS')
         print('='*50)
+        print(f'Image saved at: {filepath}')
         print(f'Predicted class ID: {prediction_result.predicted_class}')
         print(f'Confidence: {prediction_result.confidence:.4f} ({prediction_result.confidence*100:.2f}%)')
 
@@ -142,7 +143,7 @@ def get_info_for_prediction(predictions: set[str], llm_client: ChatClientInterfa
         print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {prediction}')
         print('\n' + '='*50)
         question = BREED_DETAILS_TASK.format(breed=prediction)
-        llm_client.stream_chat(question)
+        llm_client.stream_chat([question])
 
 def generate_dog_trainer_image(predictions: set[str], llm_client: ImageClientInterface, output_dir: str) -> None:
     for prediction in predictions:
@@ -245,10 +246,10 @@ def main():
     top_predictions = get_top_prediction_class_name(predictions_result, predictions_result_masked)
     print(f'Top predicted class names: {top_predictions}')
 
-    ollama_client = OllamaClient()
+    ollama_client = OllamaClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
     get_info_for_prediction(top_predictions, ollama_client)
 
-    gem_client = GemClient()
+    gem_client = GemClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
     get_info_for_prediction(top_predictions, gem_client)
 
     # gem_image_client = GemImageClient()

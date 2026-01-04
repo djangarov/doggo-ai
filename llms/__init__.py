@@ -12,13 +12,15 @@ from .ollama_client import OllamaClient
 from .gem_client import GemClient
 from .image_client_interface import ImageClientInterface
 from .gem_image_client import GemImageClient
+from .client_factory import ClientFactory
 
 __all__ = [
     'ImageClientInterface',
     'ChatClientInterface',
     'OllamaClient',
     'GemClient',
-    'GemImageClient'
+    'GemImageClient',
+    'ClientFactory',
 ]
 
 def list_llms() -> list[str]:
@@ -28,5 +30,6 @@ def list_llms() -> list[str]:
         'ChatClientInterface',
         'OllamaClient',
         'GemClient',
-        'GemImageClient'
+        'GemImageClient',
+        'ClientFactory',
     ]

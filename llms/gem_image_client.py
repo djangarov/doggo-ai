@@ -3,7 +3,6 @@ from google import genai
 from google.genai import types
 
 from llms.image_client_interface import ImageClientInterface
-from llms.prompts import CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER
 
 
 MODEL = 'gemini-2.5-flash'
