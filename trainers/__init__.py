@@ -13,7 +13,7 @@ from .inception_resnet_v2_trainer import InceptionResNetV2Trainer
 from .inception_v3_trainer import InceptionV3Trainer
 from .resnet50_trainer import ResNet50Trainer
 from .vgg19_trainer import VGG19Trainer
-from .model_factory import ModelFactory
+from .trainer_factory import TrainerFactory
 
 __all__ = [
     'AbstractTrainer',
@@ -23,7 +23,7 @@ __all__ = [
     'InceptionV3Trainer',
     'ResNet50Trainer',
     'VGG19Trainer',
-    'ModelFactory',
+    'TrainerFactory',
 ]
 
 def list_trainers() -> list[str]:
@@ -36,5 +36,5 @@ def list_trainers() -> list[str]:
         'InceptionV3Trainer',
         'ResNet50Trainer',
         'VGG19Trainer',
-        'ModelFactory',
+        'TrainerFactory',
     ]

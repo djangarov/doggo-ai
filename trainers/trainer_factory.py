@@ -6,7 +6,7 @@ from trainers.inception_resnet_v2_trainer import InceptionResNetV2Trainer
 from trainers.efficientnet_b7_trainer import EfficientNetB7Trainer
 
 
-class ModelFactory:
+class TrainerFactory:
     """
     Factory class for creating model trainers
     """
