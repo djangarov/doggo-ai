@@ -12,6 +12,20 @@ class GemSession(ChatSessionInterface):
 
 class GemClient(ChatClientInterface):
     def __init__(self, personality: str, model: str = MODEL, api_key: str = None) -> None:
+        """
+        Initialize the GemClient with a personality, model, and API key.
+
+        Args:
+            personality (str): The personality for the chat session.
+            model (str): The model to use for chat. Defaults to MODEL.
+            api_key (str|None): The API key for Gemini. If None, will use GEMINI_API_KEY environment variable.
+
+        Raises:
+            ValueError: If no API key is provided or found in environment variables.
+
+        Returns:
+            None
+        """
         self.model = model
         self.personality = personality
         api_key = api_key or os.getenv('GEMINI_API_KEY')
@@ -23,7 +37,7 @@ class GemClient(ChatClientInterface):
 
     def chat(self, session: GemSession) -> str:
         try:
-            response = self.client.models.generate_content(
+            response: types.GenerateContentResponse = self.client.models.generate_content(
                 model=self.model,
                 contents=session.messages,
                 config=self._build_config(),
@@ -35,7 +49,7 @@ class GemClient(ChatClientInterface):
 
     def stream_chat(self, session: GemSession) -> str:
         try:
-            stream = self.client.models.generate_content_stream(
+            stream: types.GenerateContentResponse = self.client.models.generate_content_stream(
                 model=self.model,
                 contents=session.messages,
                 config=self._build_config(),
@@ -46,7 +60,15 @@ class GemClient(ChatClientInterface):
             print(f"An error occurred during gemini stream chat: {e}")
 
     def build_initial_session(self, messages: list[str]|None = None) -> GemSession:
-        """Build session for the LLM."""
+        """
+        Build session for the LLM
+
+        Args:
+            messages (list[str]|None): Initial messages for the session
+
+        Returns:
+            GemSession: The chat session
+        """
         if messages is None:
             return GemSession([])
 
@@ -56,7 +78,15 @@ class GemClient(ChatClientInterface):
         ])
 
     def _build_config(self) -> types.GenerateContentConfig:
-        """Build configuration for Gemini requests"""
+        """
+        Build configuration for Gemini requests
+
+        Args:
+            None
+
+        Returns:
+            types.GenerateContentConfig: The configuration for Gemini requests
+        """
         return types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_budget=0),
             system_instruction=self.personality,
@@ -64,7 +94,15 @@ class GemClient(ChatClientInterface):
         )
 
     def _handle_stream(self, stream: types.GenerateContentResponse) -> str:
-        """Handle streaming response from Gemini"""
+        """
+        Handle streaming response from Gemini
+
+        Args:
+            stream (types.GenerateContentResponse): The streaming response
+
+        Returns:
+            str: The complete response text
+        """
         response = ''
 
         for chunk in stream:

@@ -1,3 +1,4 @@
+from llms.chat_client_interface import ChatClientInterface
 from llms.gem_client import GemClient
 from llms.ollama_client import OllamaClient
 
@@ -8,9 +9,16 @@ class ClientFactory:
     """
 
     @staticmethod
-    def create_client(client_type: str, personality: str):
+    def create_client(client_type: str, personality: str) -> ChatClientInterface:
         """
         Create LLM client instance based on client type
+
+        Args:
+            client_type (str): The type of LLM client
+            personality (str): The personality for the LLM client
+
+        Returns:
+            ChatClientInterface: The LLM client instance
         """
         llms = {
             'ollama': OllamaClient,
@@ -23,8 +31,11 @@ class ClientFactory:
         return llms[client_type](personality)
 
     @staticmethod
-    def get_available_clients():
+    def get_available_clients() -> list[str]:
         """
         Get list of available LLMs types
+
+        Returns:
+            list[str]: The list of available LLM client types
         """
         return ['ollama', 'gemini']

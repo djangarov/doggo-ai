@@ -9,6 +9,19 @@ MODEL = 'gemini-2.5-flash'
 
 class GemImageClient(ImageClientInterface):
     def __init__(self, model: str = MODEL, api_key: str = None) -> None:
+        """
+        Initialize the GemImageClient with a model and API key.
+
+        Args:
+            model (str): The model to use for image generation. Defaults to MODEL.
+            api_key (str|None): The API key for Gemini. If None, will use GEMINI_API_KEY environment variable.
+
+        Raises:
+            ValueError: If no API key is provided or found in environment variables.
+
+        Returns:
+            None
+        """
         self.model = model
         api_key = api_key or os.getenv('GEMINI_API_KEY')
 
@@ -19,7 +32,7 @@ class GemImageClient(ImageClientInterface):
 
     def generate(self, message: str, store_path: str|None = None) -> None:
         try:
-            response = self.client.models.generate_content(
+            response: types.GenerateContentResponse = self.client.models.generate_content(
                 model=self.model,
                 contents=[message],
             )
@@ -29,6 +42,15 @@ class GemImageClient(ImageClientInterface):
             print(f"An error occurred during gemini image generation: {e}")
 
     def _build_config(self) -> types.GenerateContentConfig:
+        """
+        Build configuration for Gemini image generation
+
+        Args:
+            None
+
+        Returns:
+            types.GenerateContentConfig: The configuration for Gemini image generation
+        """
         return types.GenerateContentConfig(
             image_config=types.ImageConfig(
                 aspect_ratio='16:9',
@@ -37,6 +59,16 @@ class GemImageClient(ImageClientInterface):
         )
 
     def _handle_image_generation(self, response: types.GenerateContentResponse, store_path: str|None = None) -> None:
+        """
+        Handle image generation response from Gemini
+
+        Args:
+            response (types.GenerateContentResponse): The image generation response
+            store_path (str|None): The path to store the generated image
+
+        Returns:
+            None
+        """
         for part in response.parts:
             if part.text is not None:
                 print(part.text)

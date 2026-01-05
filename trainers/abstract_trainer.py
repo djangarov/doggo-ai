@@ -18,6 +18,16 @@ class AbstractTrainer(ABC):
                  image_height: int = 150) -> None:
         """
         Initialize the base trainer with the given parameters.
+
+        Args:
+            model_type (str): Type of the model (e.g., 'ResNet50', 'VGG16').
+            epochs (int): Number of training epochs.
+            batch_size (int): Size of the training batches.
+            image_width (int): Width of the input images.
+            image_height (int): Height of the input images.
+
+        Returns:
+            None
         """
         self.model_type = model_type
         self.epochs = epochs
@@ -27,12 +37,26 @@ class AbstractTrainer(ABC):
 
     @abstractmethod
     def get_model(self, num_categories: int) -> keras.Model:
-        """Return the compiled model for training"""
+        """
+        Return the compiled model for training
+
+        Args:
+            num_categories (int): Number of output categories for classification.
+
+        Returns:
+            keras.Model: Compiled Keras model.
+        """
         pass
 
     def load_data(self, data_dir: str) -> tuple[tf.data.Dataset, tf.data.Dataset]:
         """
         Load image data from directory `data_dir`.
+
+        Args:
+            data_dir (str): Path to the directory containing image data.
+
+        Returns:
+            tuple[tf.data.Dataset, tf.data.Dataset]: Training and validation datasets.
         """
         try:
             dataset = keras.utils.image_dataset_from_directory(
@@ -53,6 +77,13 @@ class AbstractTrainer(ABC):
                          validation_dataset: tf.data.Dataset) -> tuple[tf.data.Dataset, tf.data.Dataset]:
         """
         Optimize dataset for performance
+
+        Args:
+            train_dataset (tf.data.Dataset): Training dataset.
+            validation_dataset (tf.data.Dataset): Validation dataset.
+
+        Returns:
+            tuple[tf.data.Dataset, tf.data.Dataset]: Optimized training and validation datasets.
         """
         train_dataset = train_dataset.cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)
         validation_dataset = validation_dataset.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
@@ -62,6 +93,12 @@ class AbstractTrainer(ABC):
     def validate_image_format(self, image_path: str) -> bool:
         """
         Validate if an image can be decoded by TensorFlow
+
+        Args:
+            image_path (str): Path to the image file.
+
+        Returns:
+            bool: True if the image is valid, False otherwise.
         """
         try:
             # Read the image file
@@ -80,6 +117,12 @@ class AbstractTrainer(ABC):
     def remove_problematic_files(self, data_dir: str) -> list[str]:
         """
         Find files that might cause issues including broken images
+
+        Args:
+            data_dir (str): Path to the directory containing image data.
+
+        Returns:
+            list[str]: List of problematic file paths that were removed.
         """
         problematic_files = []
 
@@ -108,6 +151,13 @@ class AbstractTrainer(ABC):
                            history: keras.callbacks.History) -> None:
         """
         Visualize training history
+
+        Args:
+            model_name (str): Name of the model.
+            history (keras.callbacks.History): Training history object.
+
+        Returns:
+            None
         """
         acc = history.history['accuracy']
         val_acc = history.history['val_accuracy']
@@ -143,6 +193,13 @@ class AbstractTrainer(ABC):
                    model_name: str) -> None:
         """
         Save the trained model to a file
+
+        Args:
+            model (keras.Model): The trained model to save.
+            model_name (str): Name of the model.
+
+        Returns:
+            None
         """
         filename = f'{model_name}.keras'
         model.save(filename)
@@ -151,6 +208,12 @@ class AbstractTrainer(ABC):
     def get_callbacks(self, model_name: str) -> list[keras.callbacks.Callback]:
         """
         Get training callbacks
+
+        Args:
+            model_name (str): Name of the model.
+
+        Returns:
+            list[keras.callbacks.Callback]: List of Keras callbacks.
         """
         return [
             keras.callbacks.EarlyStopping(
@@ -180,6 +243,13 @@ class AbstractTrainer(ABC):
               custom_model_name: str | None = None) -> tuple[keras.Model, keras.callbacks.History]:
         """
         Main training method
+
+        Args:
+            dataset_dir (str): Path to the directory containing image data.
+            custom_model_name (str | None): Custom name for the model. If None, uses default model type.
+
+        Returns:
+            tuple[keras.Model, keras.callbacks.History]: Trained model and training history.
         """
         self.remove_problematic_files(dataset_dir)
 

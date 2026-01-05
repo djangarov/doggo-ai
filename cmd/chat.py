@@ -9,7 +9,7 @@ from llms.prompts import CONFIG_PERSONALITY_PROFESSIONAL_DOG_TRAINER
 
 load_dotenv()
 
-def start_conversation(chat_client: ChatClientInterface):
+def start_conversation(chat_client: ChatClientInterface) -> None:
     session_messages = chat_client.build_initial_session()
 
     while True:

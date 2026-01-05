@@ -11,6 +11,16 @@ class OllamaSession(ChatSessionInterface):
 
 class OllamaClient(ChatClientInterface):
     def __init__(self, personality: str, model: str = MODEL) -> None:
+        """
+        Initialize the OllamaClient with a personality and model.
+
+        Args:
+            personality (str): The personality for the chat session.
+            model (str): The model to use for chat. Defaults to MODEL.
+
+        Returns:
+            None
+        """
         self.model = model
         self.personality = personality
 
@@ -41,11 +51,27 @@ class OllamaClient(ChatClientInterface):
             print(f"An error occurred during ollama stream chat: {e}")
 
     def _get_personality(self) -> dict:
-        """Return the personality as a system message"""
+        """
+        Return the personality as a system message
+
+        Args:
+            None
+
+        Returns:
+            dict: The personality system message
+        """
         return {'role': 'system', 'content': self.personality}
 
     def build_initial_session(self, messages: list[str]|None = None) -> OllamaSession:
-        """Build messages for the LLM. Add personallity and append user messages if any."""
+        """
+        Build messages for the LLM. Add personallity and append user messages if any.
+
+        Args:
+            messages (list[str]|None): Initial messages for the session
+
+        Returns:
+            OllamaSession: The chat session
+        """
         initial = [self._get_personality()]
 
         if messages:
@@ -54,7 +80,15 @@ class OllamaClient(ChatClientInterface):
         return OllamaSession(initial)
 
     def _handle_stream(self, stream: ChatResponse) -> str:
-        """Handle streaming response from Ollama"""
+        """
+        Handle streaming response from Ollama
+
+        Args:
+            stream (ChatResponse): The streaming response
+
+        Returns:
+            str: The complete response text
+        """
         response = ''
 
         for chunk in stream:

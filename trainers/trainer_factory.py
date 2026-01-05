@@ -1,3 +1,4 @@
+from trainers.abstract_trainer import AbstractTrainer
 from trainers.vgg19_trainer import VGG19Trainer
 from trainers.resnet50_trainer import ResNet50Trainer
 from trainers.inception_v3_trainer import InceptionV3Trainer
@@ -12,9 +13,15 @@ class TrainerFactory:
     """
 
     @staticmethod
-    def create_trainer(model_type: str):
+    def create_trainer(model_type: str) -> AbstractTrainer:
         """
         Create trainer instance based on model type
+
+        Args:
+            model_type (str): Type of the model (e.g., 'vgg19', 'resnet50').
+
+        Returns:
+            An instance of the corresponding trainer class.
         """
         trainers = {
             'vgg19': VGG19Trainer,
@@ -31,8 +38,11 @@ class TrainerFactory:
         return trainers[model_type]()
 
     @staticmethod
-    def get_available_models():
+    def get_available_models() -> list[str]:
         """
         Get list of available model types
+
+        Returns:
+            list[str]: List of available model types.
         """
         return ['vgg19', 'resnet50', 'inception_v3', 'custom', 'inception_resnet_v2', 'efficientnet_b7']
