@@ -24,6 +24,7 @@ MIN_SCORE_THRESH = 0.3
 TARGET_CLASS = 18  # Dog class ID
 
 def draw_and_save_detection_boxes(image_name: str, tensor_image: tf.Tensor, detection_boxes: dict, output_dir: str):
+    """Draw detection boxes around the detected objects on the image and save the result."""
     _, ax = plt.subplots(1, figsize=(12, 8))
     ax.imshow(tensor_image[0])
 
@@ -57,6 +58,7 @@ def draw_and_save_detection_boxes(image_name: str, tensor_image: tf.Tensor, dete
     plt.savefig(filepath, format='jpg', dpi=300, bbox_inches='tight')
 
 def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, output_dir: str) -> list[dict]:
+    """Process cropped images and make predictions using the classifier. Store the results in JSON files."""
     predictions_result = []
 
     for detection_count, cropped_image in cropped_images.items():
@@ -124,6 +126,7 @@ def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, outpu
     return predictions_result
 
 def get_top_prediction_class_name(predictions: list[dict], predictions_masked: list[dict] | None) -> set[str]:
+    """Compare predictions from normal and masked models and return top class names."""
     top_class_names = set()
 
     for idx, prediction in enumerate(predictions):
@@ -138,6 +141,7 @@ def get_top_prediction_class_name(predictions: list[dict], predictions_masked: l
     return top_class_names
 
 def get_info_for_prediction(predictions: set[str], llm_client: ChatClientInterface) -> None:
+    """Get detailed information for each prediction using the provided LLM client."""
     for prediction in predictions:
         print('\n' + '='*50)
         print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {prediction}')
@@ -147,6 +151,7 @@ def get_info_for_prediction(predictions: set[str], llm_client: ChatClientInterfa
         llm_client.stream_chat(messages)
 
 def generate_dog_trainer_image(predictions: set[str], llm_client: ImageClientInterface, output_dir: str) -> None:
+    """Generate dog trainer images for each prediction using the provided image LLM client."""
     for prediction in predictions:
         print('\n' + '='*50)
         print(f'Asking LLM ({llm_client.__class__.__name__}) to generate image for breed: {prediction}')

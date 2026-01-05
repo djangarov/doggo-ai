@@ -16,7 +16,7 @@ class OllamaClient(ChatClientInterface):
 
     def chat(self, session: OllamaSession) -> str:
         try:
-            response = chat(
+            response: ChatResponse = chat(
                 model=self.model,
                 messages=session.messages,
                 stream=False,
@@ -29,7 +29,7 @@ class OllamaClient(ChatClientInterface):
 
     def stream_chat(self, session: OllamaSession) -> str:
         try:
-            stream = chat(
+            stream: ChatResponse = chat(
                 model=self.model,
                 messages=session.messages,
                 stream=True,
