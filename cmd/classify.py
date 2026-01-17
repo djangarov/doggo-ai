@@ -14,6 +14,7 @@ from PIL import Image
 import tensorflow as tf
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.classification_service import ClassificationService
 from llms import OllamaClient, GemClient, GemImageClient, ChatClientInterface, ImageClientInterface
 from llms.prompts import BREED_DETAILS_TASK, CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER, DOG_TRAINER_WITH_SPECIFIC_BREAD_TASK
 from processors import COCOObjectDetector, ImageClassifier
@@ -22,40 +23,6 @@ load_dotenv()
 
 MIN_SCORE_THRESH = 0.3
 TARGET_CLASS = 18  # Dog class ID
-
-def draw_and_save_detection_boxes(image_name: str, tensor_image: tf.Tensor, detection_boxes: dict, output_dir: str):
-    """Draw detection boxes around the detected objects on the image and save the result."""
-    _, ax = plt.subplots(1, figsize=(12, 8))
-    ax.imshow(tensor_image[0])
-
-    composite_image = None
-
-    for detection_box in detection_boxes.values():
-        # Draw the bounding box
-        rect = patches.Rectangle((detection_box['rectangle']['left'], detection_box['rectangle']['top']),
-                                    detection_box['rectangle']['width'], detection_box['rectangle']['height'],
-                                    linewidth=3, edgecolor=detection_box['color'], facecolor='none')
-        ax.add_patch(rect)
-
-        # Add label
-        ax.text(rect.get_x(), rect.get_y() - 10, detection_box['label'], fontsize=12, color='white',
-                bbox=dict(boxstyle='round,pad=0.3', facecolor=detection_box['color'], alpha=0.8))
-
-        if 'image' in detection_box:
-            composite_image = detection_box['image']
-
-    # Display the composite image
-    if composite_image is not None:
-        ax.imshow(composite_image.astype(np.uint8))
-
-    ax.set_title(f'Object Detection Results ({len(detection_boxes)} objects found)', fontsize=16)
-    ax.axis('off')
-    plt.tight_layout()
-
-    filename = f'{image_name}_{len(detection_boxes):03d}.jpg'
-    filepath = os.path.join(output_dir, filename)
-
-    plt.savefig(filepath, format='jpg', dpi=300, bbox_inches='tight')
 
 def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, output_dir: str) -> list[dict]:
     """Process cropped images and make predictions using the classifier. Store the results in JSON files."""
@@ -183,21 +150,6 @@ def main():
         print(f'Warning: Dataset directory {args.dataset} not found!')
         sys.exit(1)
 
-    print('Loading model...')
-    coco_detector = COCOObjectDetector(MIN_SCORE_THRESH, TARGET_CLASS)
-    print('Model loaded!')
-
-    tensor_image = coco_detector.preprocess_image_from_file(args.image_path)
-    image_name = os.path.splitext(os.path.basename(args.image_path))[0]  # Without extension
-
-    # Running inference
-    print('Running inference...')
-    results = coco_detector.detect(tensor_image)
-    print('Inference completed!')
-
-    valid_detections = np.sum(results.scores >= MIN_SCORE_THRESH)
-    print(f'Found {valid_detections} objects with confidence >= {MIN_SCORE_THRESH}')
-
     folder_ts = str(time())
     output_dir = os.path.join(args.output_dir, folder_ts)
     output_masked_dir = os.path.join(args.output_dir, folder_ts, 'masked')
@@ -205,9 +157,9 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(output_masked_dir, exist_ok=True)
 
-    if valid_detections == 0:
-        print('No objects detected with sufficient confidence. Exiting.')
-        return
+    print('Loading model...')
+    coco_detector = COCOObjectDetector(MIN_SCORE_THRESH, TARGET_CLASS)
+    print('Model loaded!')
 
     # Load the model
     print(f'Loading model from {args.model_path}...')
@@ -216,34 +168,35 @@ def main():
 
     classifier = ImageClassifier(model, args.dataset)
 
-    print('Drawing detections with bounding boxes...')
-    detection_boxes = coco_detector.get_detections_boxes(tensor_image[0], results)
+    classification_service = ClassificationService(coco_detector, classifier)
+    tensor_image, image_name, detected_objects = classification_service.detect_objects(args.image_path)
 
-    draw_and_save_detection_boxes(image_name, tensor_image, detection_boxes, output_dir)
+    print('Drawing detections with bounding boxes...')
+    detection_boxes = classification_service.get_detections_boxes(tensor_image, detected_objects)
+    classification_service.draw_and_save_detection_boxes(image_name, tensor_image, detection_boxes, output_dir)
 
     # Crop detected objects
     print('Cropping detected objects...')
-    cropped_images = coco_detector.get_detections(tensor_image[0], results)
+    cropped_images = coco_detector.get_detections(tensor_image, detected_objects)
 
     print('Proceed predicting...')
     predictions_result = proceed_predictions(cropped_images, classifier, output_dir)
 
     # Handle models with masks
     print('\nModel supports instance segmentation masks!')
-    masks = results.masks
+    masks = detected_objects.masks
     predictions_result_masked = None
 
     # Draw masks
     if masks is not None:
         print('Drawing detections with masks...')
-        detection_masks = coco_detector.get_mask_detections_boxes(tensor_image[0], results)
+        detection_masks = classification_service.get_mask_detections_boxes(tensor_image, detected_objects)
 
-        draw_and_save_detection_boxes(image_name, tensor_image, detection_masks, output_masked_dir)
+        classification_service.draw_and_save_detection_boxes(image_name, tensor_image, detection_masks, output_masked_dir)
 
         # Crop with masks
         print('Cropping with masks...')
-        cropped_mask_images = coco_detector.get_mask_detections(tensor_image[0], results)
-
+        cropped_mask_images = coco_detector.get_mask_detections(tensor_image, detected_objects)
         print('Proceed predicting with masks...')
         predictions_result_masked = proceed_predictions(cropped_mask_images, classifier, output_masked_dir)
 
