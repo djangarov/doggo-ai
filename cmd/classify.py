@@ -1,17 +1,10 @@
 import os
 import sys
 import argparse
-import json
-import re
 from time import time
 from dotenv import load_dotenv
 
 import keras
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
-import numpy as np
-from PIL import Image
-import tensorflow as tf
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.classification_service import ClassificationService
@@ -24,98 +17,6 @@ load_dotenv()
 MIN_SCORE_THRESH = 0.3
 TARGET_CLASS = 18  # Dog class ID
 
-def proceed_predictions(cropped_images: dict, classifier: ImageClassifier, output_dir: str) -> list[dict]:
-    """Process cropped images and make predictions using the classifier. Store the results in JSON files."""
-    predictions_result = []
-
-    for detection_count, cropped_image in cropped_images.items():
-        # Create filename
-        filename = f"{cropped_image['class_name']}_{detection_count:03d}_score_{cropped_image['score']:.2f}"
-        filepath = os.path.join(output_dir, f"{filename}.jpg")
-
-        # Convert to PIL Image and save
-        pil_image = Image.fromarray(cropped_image['image'].astype(np.uint8))
-        pil_image.save(filepath, 'JPEG', quality=95)
-
-        processed_image = classifier.preprocess_image(pil_image, classifier.model.input_shape[1:3])
-
-        # Make prediction
-        print('Making prediction...')
-        prediction_result = classifier.predict_image(processed_image)
-
-        # Get top 5 predictions
-        top_5_predictions = prediction_result.get_top(5)
-
-        prediction_data = {
-            'image_path': filepath,
-            'predicted_class_id': int(prediction_result.predicted_class),  # Convert to Python int
-            'confidence': float(prediction_result.confidence),
-            'predicted_class_name': (prediction_result.class_names[prediction_result.predicted_class]
-                                if prediction_result.class_names and
-                                prediction_result.predicted_class < len(prediction_result.class_names)
-                                else f'Class {prediction_result.predicted_class}'),
-            'top_5_predictions': [],
-            'timestamp': float(time())  # Ensure this is Python float
-        }
-
-        print('\n' + '='*50)
-        print(f'PREDICTION RESULTS')
-        print('='*50)
-        print(f'Image saved at: {filepath}')
-        print(f'Predicted class ID: {prediction_result.predicted_class}')
-        print(f'Confidence: {prediction_result.confidence:.4f} ({prediction_result.confidence*100:.2f}%)')
-
-        print(f'Predicted class name: {prediction_result.class_names[prediction_result.predicted_class]}')
-        print('\nTop 5 predictions:')
-        for i, (idx, conf) in enumerate(top_5_predictions):
-            if idx < len(prediction_result.class_names):
-                print(f'{i+1}. {prediction_result.class_names[idx]}: {conf:.4f} ({conf*100:.2f}%)')
-                prediction_data['top_5_predictions'].append({
-                    'rank': i + 1,
-                    'class_id': int(idx),
-                    'class_name': prediction_result.class_names[idx],
-                    'confidence': float(conf),
-                    'confidence_percentage': float(conf * 100)
-                })
-
-        # Save to JSON file
-        json_filename = f"{filename}.json"
-        json_filepath = os.path.join(output_dir, json_filename)
-
-        with open(json_filepath, 'w', encoding='utf-8') as f:
-            json.dump(prediction_data, f, indent=2)
-
-        print(f'Predictions saved to: {json_filepath}')
-        predictions_result.append(prediction_data)
-
-    print(f'Saved {len(cropped_images)} cropped images')
-
-    return predictions_result
-
-def get_top_prediction_class_name(predictions: list[dict], predictions_masked: list[dict] | None) -> set[str]:
-    """Compare predictions from normal and masked models and return top class names."""
-    top_class_names = set()
-
-    for idx, prediction in enumerate(predictions):
-        top_prediction = prediction['predicted_class_name']
-
-        if predictions_masked is not None:
-            top_prediction = prediction['predicted_class_name'] if prediction['confidence'] >= predictions_masked[idx]['confidence'] else predictions_masked[idx]['predicted_class_name']
-
-        top_class_name = re.sub(r'[-_]', ' ', re.sub(r'^[^-]*-', '', top_prediction))
-        top_class_names.add(top_class_name)
-
-    return top_class_names
-
-def get_info_for_prediction(predictions: set[str], llm_client: ChatClientInterface) -> None:
-    """Get detailed information for each prediction using the provided LLM client."""
-    for prediction in predictions:
-        print('\n' + '='*50)
-        print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {prediction}')
-        print('\n' + '='*50)
-        question = BREED_DETAILS_TASK.format(breed=prediction)
-        messages = llm_client.build_initial_session([question])
-        llm_client.stream_chat(messages)
 
 def generate_dog_trainer_image(predictions: set[str], llm_client: ImageClientInterface, output_dir: str) -> None:
     """Generate dog trainer images for each prediction using the provided image LLM client."""
@@ -177,10 +78,10 @@ def main():
 
     # Crop detected objects
     print('Cropping detected objects...')
-    cropped_images = coco_detector.get_detections(tensor_image, detected_objects)
+    cropped_images = classification_service.get_detections(tensor_image, detected_objects)
 
     print('Proceed predicting...')
-    predictions_result = proceed_predictions(cropped_images, classifier, output_dir)
+    predictions_result = classification_service.proceed_predictions(cropped_images, classifier, output_dir)
 
     # Handle models with masks
     print('\nModel supports instance segmentation masks!')
@@ -198,18 +99,18 @@ def main():
         print('Cropping with masks...')
         cropped_mask_images = coco_detector.get_mask_detections(tensor_image, detected_objects)
         print('Proceed predicting with masks...')
-        predictions_result_masked = proceed_predictions(cropped_mask_images, classifier, output_masked_dir)
+        predictions_result_masked = classification_service.proceed_predictions(cropped_mask_images, classifier, output_masked_dir)
 
     print('Object detection completed!')
 
-    top_predictions = get_top_prediction_class_name(predictions_result, predictions_result_masked)
+    top_predictions = classification_service.get_top_prediction_class_name(predictions_result, predictions_result_masked)
     print(f'Top predicted class names: {top_predictions}')
 
     ollama_client = OllamaClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
-    get_info_for_prediction(top_predictions, ollama_client)
+    classification_service.get_info_for_prediction(top_predictions, ollama_client)
 
     gem_client = GemClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
-    get_info_for_prediction(top_predictions, gem_client)
+    classification_service.get_info_for_prediction(top_predictions, gem_client)
 
     # gem_image_client = GemImageClient()
     # generate_dog_trainer_image(top_predictions, gem_image_client, output_dir)
