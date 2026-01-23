@@ -14,9 +14,60 @@ from processors.image_classifier import ImageClassifier
 
 
 class ClassificationService:
-    def __init__(self, detector: COCOObjectDetector, classifier: ImageClassifier) -> None:
+    def __init__(self, detector: COCOObjectDetector, classifier: ImageClassifier, chat_client: ChatClientInterface) -> None:
         self.detector = detector
         self.classifier = classifier
+        self.chat_client = chat_client
+
+    def clasify_image(self, image_path: str, output_dir: str, output_masked_dir: str) -> None:
+        """
+        Classify objects in the given image and get detailed information using the LLM client.
+
+        Args:
+            image_path (str): The path to the image file.
+            output_dir (str): The directory to save cropped images and results.
+            output_masked_dir (str): The directory to save masked cropped images and results.
+
+        Returns:
+            None
+        """
+        tensor_image, image_name, detected_objects = self.detect_objects(image_path)
+
+        print('Drawing detections with bounding boxes...')
+        detection_boxes = self.get_detections_boxes(tensor_image, detected_objects)
+        self.draw_and_save_detection_boxes(image_name, tensor_image, detection_boxes, output_dir)
+
+        # Crop detected objects
+        print('Cropping detected objects...')
+        cropped_images = self.get_detections(tensor_image, detected_objects)
+
+        print('Proceed predicting...')
+        predictions_result = self.proceed_predictions(cropped_images, output_dir)
+
+        # Handle models with masks
+        print('\nModel supports instance segmentation masks!')
+        masks = detected_objects.masks
+        predictions_result_masked = None
+
+        # Draw masks
+        if masks is not None:
+            print('Drawing detections with masks...')
+            detection_masks = self.get_mask_detections_boxes(tensor_image, detected_objects)
+
+            self.draw_and_save_detection_boxes(image_name, tensor_image, detection_masks, output_masked_dir)
+
+            # Crop with masks
+            print('Cropping with masks...')
+            cropped_mask_images = self.detector.get_mask_detections(tensor_image, detected_objects)
+            print('Proceed predicting with masks...')
+            predictions_result_masked = self.proceed_predictions(cropped_mask_images, output_masked_dir)
+
+        print('Object detection completed!')
+
+        top_predictions = self.get_top_prediction_class_name(predictions_result, predictions_result_masked)
+        print(f'Top predicted class names: {top_predictions}')
+
+        self.get_info_for_prediction(top_predictions)
 
     def detect_objects(self, image_path: str) -> tuple|None:
         """
@@ -132,7 +183,7 @@ class ClassificationService:
 
         plt.savefig(filepath, format='jpg', dpi=300, bbox_inches='tight')
 
-    def proceed_predictions(self, cropped_images: dict, classifier: ImageClassifier, output_dir: str) -> list[dict]:
+    def proceed_predictions(self, cropped_images: dict, output_dir: str) -> list[dict]:
         """
         Process cropped images and make predictions using the classifier. Store the results in JSON files.
 
@@ -155,12 +206,11 @@ class ClassificationService:
             pil_image = Image.fromarray(cropped_image['image'].astype(np.uint8))
             pil_image.save(filepath, 'JPEG', quality=95)
 
-            processed_image = classifier.preprocess_image(pil_image, classifier.model.input_shape[1:3])
+            processed_image = self.classifier.preprocess_image(pil_image, self.classifier.model.input_shape[1:3])
 
             # Make prediction
             print('Making prediction...')
-            prediction_result = classifier.predict_image(processed_image)
-
+            prediction_result = self.classifier.predict_image(processed_image)
             # Get top 5 predictions
             top_5_predictions = prediction_result.get_top(5)
 
@@ -234,7 +284,7 @@ class ClassificationService:
 
         return top_class_names
 
-    def get_info_for_prediction(self, predictions: set[str], llm_client: ChatClientInterface) -> None:
+    def get_info_for_prediction(self, predictions: set[str]) -> None:
         """
         Get detailed information for each prediction using the provided LLM client.
 
@@ -247,8 +297,8 @@ class ClassificationService:
         """
         for prediction in predictions:
             print('\n' + '='*50)
-            print(f'Asking LLM ({llm_client.__class__.__name__}) for details about: {prediction}')
+            print(f'Asking LLM ({self.chat_client.__class__.__name__}) for details about: {prediction}')
             print('\n' + '='*50)
             question = BREED_DETAILS_TASK.format(breed=prediction)
-            messages = llm_client.build_initial_session([question])
-            llm_client.stream_chat(messages)
+            messages = self.chat_client.build_initial_session([question])
+            self.chat_client.stream_chat(messages)

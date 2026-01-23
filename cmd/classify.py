@@ -67,50 +67,17 @@ def main():
     model = keras.models.load_model(args.model_path)
     print('Model loaded successfully!')
 
+    chat_client = OllamaClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
+
+    try:
+        chat_client.get_available_models()
+    except Exception:
+        chat_client = GemClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
+
     classifier = ImageClassifier(model, args.dataset)
 
-    classification_service = ClassificationService(coco_detector, classifier)
-    tensor_image, image_name, detected_objects = classification_service.detect_objects(args.image_path)
-
-    print('Drawing detections with bounding boxes...')
-    detection_boxes = classification_service.get_detections_boxes(tensor_image, detected_objects)
-    classification_service.draw_and_save_detection_boxes(image_name, tensor_image, detection_boxes, output_dir)
-
-    # Crop detected objects
-    print('Cropping detected objects...')
-    cropped_images = classification_service.get_detections(tensor_image, detected_objects)
-
-    print('Proceed predicting...')
-    predictions_result = classification_service.proceed_predictions(cropped_images, classifier, output_dir)
-
-    # Handle models with masks
-    print('\nModel supports instance segmentation masks!')
-    masks = detected_objects.masks
-    predictions_result_masked = None
-
-    # Draw masks
-    if masks is not None:
-        print('Drawing detections with masks...')
-        detection_masks = classification_service.get_mask_detections_boxes(tensor_image, detected_objects)
-
-        classification_service.draw_and_save_detection_boxes(image_name, tensor_image, detection_masks, output_masked_dir)
-
-        # Crop with masks
-        print('Cropping with masks...')
-        cropped_mask_images = coco_detector.get_mask_detections(tensor_image, detected_objects)
-        print('Proceed predicting with masks...')
-        predictions_result_masked = classification_service.proceed_predictions(cropped_mask_images, classifier, output_masked_dir)
-
-    print('Object detection completed!')
-
-    top_predictions = classification_service.get_top_prediction_class_name(predictions_result, predictions_result_masked)
-    print(f'Top predicted class names: {top_predictions}')
-
-    ollama_client = OllamaClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
-    classification_service.get_info_for_prediction(top_predictions, ollama_client)
-
-    gem_client = GemClient(CONFIG_PERSONALITY_FIRST_TIME_DOG_OWNER)
-    classification_service.get_info_for_prediction(top_predictions, gem_client)
+    classification_service = ClassificationService(coco_detector, classifier, chat_client)
+    classification_service.clasify_image(args.image_path, output_dir, output_masked_dir)
 
     # gem_image_client = GemImageClient()
     # generate_dog_trainer_image(top_predictions, gem_image_client, output_dir)

@@ -1,4 +1,4 @@
-from ollama import ChatResponse, chat
+from ollama import ChatResponse, ListResponse, chat, list as tags
 
 from llms.chat_client_interface import ChatClientInterface, ChatSessionInterface
 
@@ -78,6 +78,24 @@ class OllamaClient(ChatClientInterface):
             initial.extend([{'role': 'user', 'content': message} for message in messages])
 
         return OllamaSession(initial)
+
+    def get_available_models(self) -> list[str]:
+        """
+        Get available tags from the Ollama model.
+
+        Args:
+            None
+
+        returns:
+            list[str]: List of available tags
+        """
+        try:
+            response: ListResponse = tags()
+
+            return [model.model for model in response.models]
+        except Exception as e:
+            print(f"An error occurred while fetching available models")
+            raise e
 
     def _handle_stream(self, stream: ChatResponse) -> str:
         """
